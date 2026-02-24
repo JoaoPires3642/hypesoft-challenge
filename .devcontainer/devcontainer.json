@@ -1,0 +1,11 @@
+{
+  "name": "hypesoft-challenge",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:9.0",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:1": {}
+  },
+  "forwardPorts": [3000, 5000, 8080, 8081]
+}
