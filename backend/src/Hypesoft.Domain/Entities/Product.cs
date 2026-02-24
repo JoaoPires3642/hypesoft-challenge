@@ -1,4 +1,4 @@
-namespace Hypesoft.Domain.Entidades
+namespace Hypesoft.Domain.Entities
 {
     public class Product
     {

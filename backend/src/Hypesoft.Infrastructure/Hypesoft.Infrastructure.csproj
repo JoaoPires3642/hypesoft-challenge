@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Hypesoft.Application\Hypesoft.Application.csproj" />
+    <PackageReference Include="MongoDB.EntityFrameworkCore" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.EntityFrameworkCore" Version="7.0.0" />
+    <ProjectReference Include="..\Hypesoft.Domain\Hypesoft.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
