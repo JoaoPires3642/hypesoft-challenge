@@ -35,6 +35,18 @@ namespace Hypesoft.Domain.Entities
             StockQuantity = newQuantity;
         }
 
+        public void UpdateDetails(string name, string description, decimal price)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("O nome do Produto é obrigatório.", nameof(name));
+            if (price < 0)
+                throw new ArgumentException("O preço do Produto não pode ser negativo.", nameof(price));
+
+            Name = name;
+            Description = description;
+            Price = price;
+        }
+
         public bool IsStockLow() => StockQuantity < 10;
 
     }

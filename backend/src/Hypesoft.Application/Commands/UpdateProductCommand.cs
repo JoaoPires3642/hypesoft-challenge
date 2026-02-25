@@ -16,9 +16,8 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, bool>
         var product = await _repository.GetByIdAsync(request.Id);
         if (product == null) return false;
 
-        // Aqui você usaria métodos da entidade para atualizar (DDD)
-        // product.UpdateDetails(request.Name, request.Description, request.Price);
-        // product.UpdateStock(request.StockQuantity);
+        product.UpdateDetails(request.Name, request.Description, request.Price);
+        product.UpdateStock(request.StockQuantity);
 
         await _repository.UpdateAsync(product);
         Log.Information("Produto {ProductId} atualizado com sucesso", product.Id);
