@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Swashbuckle.AspNetCore.Annotations;
 using Serilog;
+using Hypesoft.Application.Behaviors;
+using FluentValidation;
+using MediatR;
 
 try
 {
@@ -50,17 +53,23 @@ try
     // Health Checks
     builder.Services.AddHealthChecks();
 
+    //Validation
+    builder.Services.AddValidatorsFromAssembly(typeof(Hypesoft.Application.Validators.CreateProductValidator).Assembly);
+
     // MediatR
     builder.Services.AddMediatR(cfg => 
-        cfg.RegisterServicesFromAssembly(typeof(Hypesoft.Application.Commands.CreateProductCommand).Assembly));
+    {
+        cfg.RegisterServicesFromAssembly(typeof(Hypesoft.Application.Commands.CreateProductCommand).Assembly);
+        cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    });
 
     // Repositories
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
     // EF Core com MongoDB
-    var connectionString = builder.Configuration.GetConnectionString("MongoDb");
-    var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName");
+    var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
+    var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName") ?? throw new InvalidOperationException("DatabaseName not found");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseMongoDB(connectionString, databaseName));
