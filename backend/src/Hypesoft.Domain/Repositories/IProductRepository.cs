@@ -10,4 +10,5 @@ public interface IProductRepository
     Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task <IEnumerable<Product>> SearchAsync(string? name);
+    Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId);
 }

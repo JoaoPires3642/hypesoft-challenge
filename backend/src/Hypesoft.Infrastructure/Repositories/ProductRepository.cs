@@ -56,4 +56,11 @@ public class ProductRepository : IProductRepository
     {
         throw new NotImplementedException();
     }
+    
+    public async Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId)
+{
+    return await _context.Products
+        .Where(p => p.CategoryId == categoryId)
+        .ToListAsync();
+}
 }

@@ -134,4 +134,12 @@ public async Task<IActionResult> Search([FromQuery] string name)
     var result = await _mediator.Send(new SearchProductsByNameQuery(name));
     return Ok(result);
 }
+
+[HttpGet("category/{categoryId:guid}")]
+[SwaggerOperation(Summary = "Filtra produtos por categoria", Description = "Retorna todos os produtos associados a uma categoria específica.")]
+public async Task<IActionResult> GetByCategory(Guid categoryId)
+{
+    var result = await _mediator.Send(new GetProductsByCategoryQuery(categoryId));
+    return Ok(result);
+}
 }
