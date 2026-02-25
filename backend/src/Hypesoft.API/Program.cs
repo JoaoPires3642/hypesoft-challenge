@@ -2,6 +2,7 @@ using Hypesoft.Infrastructure.Data;
 using Hypesoft.Infrastructure.Repositories;
 using Hypesoft.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Swashbuckle.AspNetCore.Annotations;
@@ -55,12 +56,15 @@ try
 
     // Repositories
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
+    builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-    //EF Core com MONGO
+    // EF Core com MongoDB
     var connectionString = builder.Configuration.GetConnectionString("MongoDb");
     var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName");
 
-    builder.Services.AddDbContext<AppDbContext>();
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseMongoDB(connectionString, databaseName));
+    
 
     var app = builder.Build();
 
