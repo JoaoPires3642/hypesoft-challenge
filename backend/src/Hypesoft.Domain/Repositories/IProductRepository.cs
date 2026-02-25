@@ -13,9 +13,9 @@ public interface IProductRepository
     Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, CancellationToken cancellationToken = default);
 
-    Task<decimal> GetTotalStockValueAsync();
-    Task<int> GetTotalCountAsync();
-    Task<Dictionary<Guid, int>> GetCountByCategoryAsync();
+    Task<decimal> GetTotalStockValueAsync(CancellationToken cancellationToken = default);
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, int>> GetCountByCategoryAsync(CancellationToken cancellationToken = default);
 
     Task<(IEnumerable<Product> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize);
     

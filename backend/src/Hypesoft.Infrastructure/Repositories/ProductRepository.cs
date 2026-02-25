@@ -71,18 +71,29 @@ public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, Can
         .ToListAsync(cancellationToken);
 }
 
-public async Task<int> GetTotalCountAsync() 
-    => await _context.Products.CountAsync();
+public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    => await _context.Products.CountAsync(cancellationToken);
 
-public async Task<decimal> GetTotalStockValueAsync()
-    => await _context.Products.SumAsync(p => p.Price * p.StockQuantity);
-
-public async Task<Dictionary<Guid, int>> GetCountByCategoryAsync()
+public async Task<decimal> GetTotalStockValueAsync(CancellationToken cancellationToken = default)
 {
-    return await _context.Products
-        .GroupBy(p => p.CategoryId)
-        .Select(g => new { CategoryId = g.Key, Count = g.Count() })
-        .ToDictionaryAsync(x => x.CategoryId, x => x.Count);
+    var stockSnapshot = await _context.Products
+        .AsNoTracking()
+        .Select(p => new { p.Price, p.StockQuantity })
+        .ToListAsync(cancellationToken);
+
+    return stockSnapshot.Sum(p => p.Price * p.StockQuantity);
+}
+
+public async Task<Dictionary<Guid, int>> GetCountByCategoryAsync(CancellationToken cancellationToken = default)
+{
+    var categoryIds = await _context.Products
+        .AsNoTracking()
+        .Select(p => p.CategoryId)
+        .ToListAsync(cancellationToken);
+
+    return categoryIds
+        .GroupBy(categoryId => categoryId)
+        .ToDictionary(group => group.Key, group => group.Count());
 }
 
     public Task<IEnumerable<Product>> SearchAsync(string? name)

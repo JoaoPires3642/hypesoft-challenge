@@ -19,10 +19,10 @@ public class GetDashboardSummaryHandler : IRequestHandler<GetDashboardSummaryQue
 
     public async Task<DashboardResponse> Handle(GetDashboardSummaryQuery request, CancellationToken cancellationToken)
     {
-        var totalCountTask = _productRepo.GetTotalCountAsync();
-        var totalValueTask = _productRepo.GetTotalStockValueAsync();
+        var totalCountTask = _productRepo.GetTotalCountAsync(cancellationToken);
+        var totalValueTask = _productRepo.GetTotalStockValueAsync(cancellationToken);
         var lowStockTask = _productRepo.GetLowStockAsync(10, cancellationToken);
-        var categoryCountsTask = _productRepo.GetCountByCategoryAsync();
+        var categoryCountsTask = _productRepo.GetCountByCategoryAsync(cancellationToken);
         var categoriesTask = _categoryRepo.GetAllAsync();
 
         // Aguarda todas as tarefas 
