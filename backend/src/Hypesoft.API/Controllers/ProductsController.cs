@@ -123,4 +123,15 @@ public class ProductsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("search")]
+[SwaggerOperation(Summary = "Busca produtos pelo nome", Description = "Retorna uma lista de produtos que contenham o termo pesquisado.")]
+public async Task<IActionResult> Search([FromQuery] string name)
+{
+    if (string.IsNullOrWhiteSpace(name))
+        return BadRequest("O termo de busca não pode estar vazio.");
+
+    var result = await _mediator.Send(new SearchProductsByNameQuery(name));
+    return Ok(result);
+}
 }

@@ -45,4 +45,15 @@ public class ProductRepository : IProductRepository
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
+    public async Task<IEnumerable<Product>> SearchByNameAsync(string name)
+{
+    return await _context.Products
+        .Where(p => p.Name.Contains(name)) 
+        .ToListAsync();
+}
+
+    public Task<IEnumerable<Product>> SearchAsync(string? name)
+    {
+        throw new NotImplementedException();
+    }
 }
