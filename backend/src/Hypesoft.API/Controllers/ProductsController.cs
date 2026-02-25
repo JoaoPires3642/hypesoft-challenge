@@ -16,6 +16,10 @@ public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
 
+    /// <summary>
+    /// Inicializa uma nova instância do controller de produtos.
+    /// </summary>
+    /// <param name="mediator">Mediator para despacho de comandos e queries.</param>
     public ProductsController(IMediator mediator)
     {
         _mediator = mediator;
@@ -124,22 +128,60 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Busca produtos por nome.
+    /// </summary>
+    /// <param name="name">Termo de busca para o nome do produto.</param>
+    /// <response code="200">Produtos encontrados com sucesso.</response>
+    /// <response code="400">Termo de busca inválido.</response>
     [HttpGet("search")]
-[SwaggerOperation(Summary = "Busca produtos pelo nome", Description = "Retorna uma lista de produtos que contenham o termo pesquisado.")]
-public async Task<IActionResult> Search([FromQuery] string name)
-{
-    if (string.IsNullOrWhiteSpace(name))
-        return BadRequest("O termo de busca não pode estar vazio.");
+    [SwaggerOperation(Summary = "Busca produtos pelo nome", Description = "Retorna uma lista de produtos que contenham o termo pesquisado.")]
+    public async Task<IActionResult> Search([FromQuery] string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest("O termo de busca não pode estar vazio.");
 
-    var result = await _mediator.Send(new SearchProductsByNameQuery(name));
-    return Ok(result);
-}
+        var result = await _mediator.Send(new SearchProductsByNameQuery(name));
+        return Ok(result);
+    }
 
-[HttpGet("category/{categoryId:guid}")]
-[SwaggerOperation(Summary = "Filtra produtos por categoria", Description = "Retorna todos os produtos associados a uma categoria específica.")]
-public async Task<IActionResult> GetByCategory(Guid categoryId)
-{
-    var result = await _mediator.Send(new GetProductsByCategoryQuery(categoryId));
-    return Ok(result);
-}
+    /// <summary>
+    /// Lista produtos por categoria.
+    /// </summary>
+    /// <param name="categoryId">Identificador da categoria.</param>
+    /// <response code="200">Lista de produtos da categoria retornada com sucesso.</response>
+    [HttpGet("category/{categoryId:guid}")]
+    [SwaggerOperation(Summary = "Filtra produtos por categoria", Description = "Retorna todos os produtos associados a uma categoria específica.")]
+    public async Task<IActionResult> GetByCategory(Guid categoryId)
+    {
+        var result = await _mediator.Send(new GetProductsByCategoryQuery(categoryId));
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Atualiza manualmente a quantidade em estoque de um produto.
+    /// </summary>
+    /// <param name="id">Identificador do produto.</param>
+    /// <param name="newQuantity">Nova quantidade em estoque.</param>
+    /// <response code="200">Estoque atualizado com sucesso.</response>
+    /// <response code="404">Produto não encontrado.</response>
+    [HttpPatch("{id:guid}/stock")]
+    [SwaggerOperation(Summary = "Atualiza o estoque manualmente")]
+    public async Task<IActionResult> UpdateStock(Guid id, [FromBody] int newQuantity)
+    {
+        var success = await _mediator.Send(new UpdateStockCommand(id, newQuantity));
+        return success ? Ok() : NotFound();
+    }
+
+    /// <summary>
+    /// Lista produtos com estoque baixo.
+    /// </summary>
+    /// <response code="200">Lista de produtos com estoque baixo retornada com sucesso.</response>
+    [HttpGet("low-stock")]
+    [SwaggerOperation(Summary = "Lista produtos com estoque baixo", Description = "Retorna produtos com menos de 10 unidades.")]
+    public async Task<IActionResult> GetLowStock()
+    {
+        var result = await _mediator.Send(new GetLowStockProductsQuery());
+        return Ok(result);
+    }
 }

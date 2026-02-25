@@ -17,7 +17,7 @@ public class SearchProductsByNameHandler : IRequestHandler<SearchProductsByNameQ
 
     public async Task<IEnumerable<ProductResponse>> Handle(SearchProductsByNameQuery request, CancellationToken cancellationToken)
     {
-        var products = await _repository.SearchAsync(request.Name);
+        var products = await _repository.SearchAsync(request.Name, cancellationToken);
         
         return products.Select(p => new ProductResponse(
             p.Id, 

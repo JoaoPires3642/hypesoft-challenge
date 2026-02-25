@@ -9,6 +9,7 @@ public interface IProductRepository
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
     Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-    Task <IEnumerable<Product>> SearchAsync(string? name);
-    Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId);
+    Task<IEnumerable<Product>> SearchAsync(string? name, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, CancellationToken cancellationToken = default);
 }

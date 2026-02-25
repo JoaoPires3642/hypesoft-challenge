@@ -45,22 +45,29 @@ public class ProductRepository : IProductRepository
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
-    public async Task<IEnumerable<Product>> SearchByNameAsync(string name)
-{
-    return await _context.Products
-        .Where(p => p.Name.Contains(name)) 
-        .ToListAsync();
-}
-
-    public Task<IEnumerable<Product>> SearchAsync(string? name)
+    public async Task<IEnumerable<Product>> SearchAsync(string? name, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var query = _context.Products.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            query = query.Where(p => p.Name.Contains(name));
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
     
-    public async Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId)
+    public async Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
 {
     return await _context.Products
         .Where(p => p.CategoryId == categoryId)
-        .ToListAsync();
+        .ToListAsync(cancellationToken);
+}
+
+public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, CancellationToken cancellationToken = default)
+{
+    return await _context.Products
+        .Where(p => p.StockQuantity < threshold)
+        .ToListAsync(cancellationToken);
 }
 }
