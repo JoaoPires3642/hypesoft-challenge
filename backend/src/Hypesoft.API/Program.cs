@@ -67,12 +67,16 @@ try
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
+    // Cache em memória 
+    builder.Services.AddDistributedMemoryCache();
+
     // EF Core com MongoDB
     var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
     var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName") ?? throw new InvalidOperationException("DatabaseName not found");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseMongoDB(connectionString, databaseName));
+        
     
 
     var app = builder.Build();

@@ -1,6 +1,7 @@
 using MediatR;
 using Hypesoft.Domain.Repositories;
 using Serilog;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Hypesoft.Application.Commands;
 
@@ -9,7 +10,12 @@ public record UpdateStockCommand(Guid ProductId, int NewQuantity) : IRequest<boo
 public class UpdateStockHandler : IRequestHandler<UpdateStockCommand, bool>
 {
     private readonly IProductRepository _repository;
-    public UpdateStockHandler(IProductRepository repository) => _repository = repository;
+    private readonly IDistributedCache _cache;
+    public UpdateStockHandler(IProductRepository repository, IDistributedCache cache)
+    {
+        _repository = repository;
+        _cache = cache;
+    }
 
     public async Task<bool> Handle(UpdateStockCommand request, CancellationToken cancellationToken)
     {
@@ -20,6 +26,7 @@ public class UpdateStockHandler : IRequestHandler<UpdateStockCommand, bool>
         product.UpdateStock(request.NewQuantity);
 
         await _repository.UpdateAsync(product);
+        await _cache.RemoveAsync("products_all_");
         
         Log.Information("Estoque do produto {ProductId} atualizado para {Quantity}", 
             product.Id, request.NewQuantity);

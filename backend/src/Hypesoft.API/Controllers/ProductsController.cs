@@ -51,7 +51,7 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
        var products = await _mediator.Send(new GetProductsQuery());
-        var product = products.FirstOrDefault(p => p.Id == id);
+        var product = products.Items.FirstOrDefault(p => p.Id == id);
         return product != null ? Ok(product) : NotFound();
     }
 

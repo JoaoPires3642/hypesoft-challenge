@@ -16,6 +16,8 @@ public interface IProductRepository
     Task<decimal> GetTotalStockValueAsync();
     Task<int> GetTotalCountAsync();
     Task<Dictionary<Guid, int>> GetCountByCategoryAsync();
+
+    Task<(IEnumerable<Product> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize);
     
 
 }

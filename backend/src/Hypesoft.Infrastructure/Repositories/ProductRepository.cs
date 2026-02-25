@@ -89,4 +89,17 @@ public async Task<Dictionary<Guid, int>> GetCountByCategoryAsync()
     {
         throw new NotImplementedException();
     }
+
+    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize)
+{
+    var query = _context.Products.AsNoTracking();
+    
+    var totalCount = await query.CountAsync();
+    var items = await query
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+
+    return (items, totalCount);
+}
 }
