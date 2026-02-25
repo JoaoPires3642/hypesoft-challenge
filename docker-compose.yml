@@ -1,29 +1,93 @@
 services:
+  # Frontend Next.js
+ #/ frontend:
+  #  build:
+     # context: ./frontend
+      #dockerfile: Dockerfile
+    #container_name: hypesoft-frontend
+   #ports:
+    # - "3000:3000"
+    #environment:
+     # - NEXT_PUBLIC_API_URL=http://localhost:5000
+    #depends_on:
+     # - api
+   # networks:
+     # - hypesoft-network
+
+  # API .NET
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hypesoft-api
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
+      - ConnectionStrings__MongoDb=mongodb://mongodb:27017
+      - ConnectionStrings__DatabaseName=hypesoft_db
+    depends_on:
+      - mongodb
+    networks:
+      - hypesoft-network
+
+  # MongoDB Database
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: hypesoft-mongo
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=hypesoft_db
     volumes:
       - mongo-data:/data/db
+    networks:
+      - hypesoft-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/hypesoft_db --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # MongoDB Express (UI)
   mongo-express:
-    image: mongo-express
+    image: mongo-express:latest
     container_name: hypesoft-mongo-ui
     ports:
       - "8081:8081"
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=admin
+      - ME_CONFIG_BASICAUTH=false
+    depends_on:
+      - mongodb
+    networks:
+      - hypesoft-network
 
+  # Keycloak Authentication Server
   keycloak:
     image: quay.io/keycloak/keycloak:latest
-    container_name: hypesoft-auth
+    container_name: hypesoft-keycloak
     command: start-dev
     ports:
       - "8080:8080"
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_DB=dev-mem
+    networks:
+      - hypesoft-network
+    healthcheck:
+      test: curl -s http://localhost:8080 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mongo-data:
+
+networks:
+  hypesoft-network:
+    driver: bridge

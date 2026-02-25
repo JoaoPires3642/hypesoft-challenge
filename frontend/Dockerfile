@@ -1,0 +1,38 @@
+# Build Stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build Next.js
+RUN npm run build
+
+# Runtime Stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install only production dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy built application
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/tsconfig.json ./
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=http://api:5000
+
+CMD ["npm", "start"]
