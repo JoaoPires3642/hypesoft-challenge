@@ -12,4 +12,10 @@ public interface IProductRepository
     Task<IEnumerable<Product>> SearchAsync(string? name, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, CancellationToken cancellationToken = default);
+
+    Task<decimal> GetTotalStockValueAsync();
+    Task<int> GetTotalCountAsync();
+    Task<Dictionary<Guid, int>> GetCountByCategoryAsync();
+    
+
 }

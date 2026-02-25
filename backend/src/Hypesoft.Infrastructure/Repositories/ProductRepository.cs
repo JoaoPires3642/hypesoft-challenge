@@ -70,4 +70,23 @@ public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, Can
         .Where(p => p.StockQuantity < threshold)
         .ToListAsync(cancellationToken);
 }
+
+public async Task<int> GetTotalCountAsync() 
+    => await _context.Products.CountAsync();
+
+public async Task<decimal> GetTotalStockValueAsync()
+    => await _context.Products.SumAsync(p => p.Price * p.StockQuantity);
+
+public async Task<Dictionary<Guid, int>> GetCountByCategoryAsync()
+{
+    return await _context.Products
+        .GroupBy(p => p.CategoryId)
+        .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+        .ToDictionaryAsync(x => x.CategoryId, x => x.Count);
+}
+
+    public Task<IEnumerable<Product>> SearchAsync(string? name)
+    {
+        throw new NotImplementedException();
+    }
 }
