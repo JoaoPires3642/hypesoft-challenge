@@ -20,27 +20,83 @@ const CHART_COLORS = [
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://api:5000";
 
+//  categoryId para category name
+async function mapProductsWithCategories(items: any[]): Promise<Product[]> {
+  try {
+    const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories`);
+    if (!categoriesResponse.ok) throw new Error("Falha ao buscar categorias");
+    const categoriesData = await categoriesResponse.json();
+    const categories = Array.isArray(categoriesData) ? categoriesData : [];
+    
+    const categoryMap = new Map(categories.map((c: any) => [c.id, c]));
+    
+    return items.map((item: any) => ({
+      ...item,
+      quantity: item.stockQuantity,
+      category: categoryMap.get(item.categoryId) || undefined,
+    }));
+  } catch (error) {
+    console.error("Erro ao mapear categorias:", error);
+    // Fallback: apenas mapear quantity
+    return items.map((item: any) => ({
+      ...item,
+      quantity: item.stockQuantity,
+    }));
+  }
+}
+
 // ----- PRODUTOS -----
 
 export async function fetchProducts(
   filters?: ProductFilters
 ): Promise<PaginatedResponse<Product>> {
   try {
+    let url = `${API_BASE_URL}/api/products`;
+    let response;
+
+
+    if (filters?.search && filters.search.trim()) {
+      response = await fetch(`${API_BASE_URL}/api/products/search?name=${encodeURIComponent(filters.search)}`);
+      if (!response.ok) throw new Error("Falha ao buscar produtos");
+      const data = await response.json();
+      
+      const items = await mapProductsWithCategories(Array.isArray(data) ? data : []);
+      
+      return {
+        data: items,
+        total: items.length,
+        page: 1,
+        pageSize: items.length,
+        totalPages: 1,
+      };
+    }
+
+    if (filters?.categoryId && filters.categoryId !== "all") {
+      response = await fetch(`${API_BASE_URL}/api/products/category/${filters.categoryId}`);
+      if (!response.ok) throw new Error("Falha ao buscar produtos por categoria");
+      const data = await response.json();
+      
+      const items = await mapProductsWithCategories(Array.isArray(data) ? data : []);
+      
+      return {
+        data: items,
+        total: items.length,
+        page: 1,
+        pageSize: items.length,
+        totalPages: 1,
+      };
+    }
+
     const params = new URLSearchParams();
-    if (filters?.search) params.append("search", filters.search);
-    if (filters?.categoryId) params.append("categoryId", filters.categoryId);
     if (filters?.page) params.append("page", filters.page.toString());
     if (filters?.pageSize) params.append("pageSize", filters.pageSize.toString());
 
-    const response = await fetch(`${API_BASE_URL}/api/products?${params}`);
+    response = await fetch(`${url}?${params}`);
     if (!response.ok) throw new Error("Falha ao buscar produtos");
     const data = await response.json();
 
-    // Mapear stockQuantity (backend) para quantity (frontend)
-    const items = (data.items || []).map((item: any) => ({
-      ...item,
-      quantity: item.stockQuantity,
-    }));
+    // Mapear stockQuantity (backend) para quantity (frontend) e adicionar categoria
+    const items = await mapProductsWithCategories(data.items || []);
 
     return {
       data: items,
@@ -67,11 +123,10 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     if (response.status === 404) return null;
     if (!response.ok) throw new Error("Falha ao buscar produto");
     const data = await response.json();
-    // Mapear stockQuantity (backend) para quantity (frontend)
-    return {
-      ...data,
-      quantity: data.stockQuantity,
-    };
+    
+    // Mapear e adicionar categoria
+    const [product] = await mapProductsWithCategories([data]);
+    return product || null;
   } catch (error) {
     console.error("Erro ao buscar produto:", error);
     return null;
