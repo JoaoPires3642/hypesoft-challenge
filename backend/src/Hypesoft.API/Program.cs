@@ -50,6 +50,21 @@ try
         }
     });
 
+    // CORS Configuration
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowFrontend", policy =>
+        {
+            policy.WithOrigins(
+                "http://localhost:3000",
+                "https://crispy-space-train-4jq5vp4q95xvfj4rw-3000.app.github.dev"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+        });
+    });
+
     // Health Checks
     builder.Services.AddHealthChecks();
 
@@ -116,6 +131,7 @@ try
         }
     });
 
+    app.UseCors("AllowFrontend");
     app.UseHttpsRedirection();
     app.UseAuthorization();
     app.MapControllers();

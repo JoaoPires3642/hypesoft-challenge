@@ -1,18 +1,18 @@
 services:
-  # Frontend Next.js
- #/ frontend:
-  #  build:
-     # context: ./frontend
-      #dockerfile: Dockerfile
-    #container_name: hypesoft-frontend
-   #ports:
-    # - "3000:3000"
-    #environment:
-     # - NEXT_PUBLIC_API_URL=http://localhost:5000
-    #depends_on:
-     # - api
-   # networks:
-     # - hypesoft-network
+  #Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hypesoft-frontend
+    ports:
+     - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    depends_on:
+      - api
+    networks:
+      - hypesoft-network
 
   # API .NET
   api:

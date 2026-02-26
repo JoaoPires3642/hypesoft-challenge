@@ -7,5 +7,25 @@
     },
     "ghcr.io/devcontainers/features/docker-in-docker:1": {}
   },
-  "forwardPorts": [3000, 5000, 8080, 8081]
+  "forwardPorts": [3000, 5000, 8080, 8081],
+  "portsAttributes": {
+    "3000": {
+      "label": "Frontend",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "5000": {
+      "label": "Backend API",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "8080": {
+      "label": "Keycloak",
+      "visibility": "public"
+    },
+    "8081": {
+      "label": "Mongo Express",
+      "visibility": "public"
+    }
+  }
 }
