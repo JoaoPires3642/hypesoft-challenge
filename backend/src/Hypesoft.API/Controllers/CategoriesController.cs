@@ -1,8 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+[Authorize(Roles = "admin")]
 public class CategoriesController : ControllerBase
 {
     private readonly IMediator _mediator;

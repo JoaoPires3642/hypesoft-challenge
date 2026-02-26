@@ -1,6 +1,7 @@
 using Hypesoft.Application.Commands;
 using Hypesoft.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -12,6 +13,8 @@ namespace Hypesoft.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
+[Authorize(Roles = "admin")]
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;

@@ -1,6 +1,7 @@
 using Hypesoft.Application.DTOs;
 using Hypesoft.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -11,6 +12,8 @@ namespace Hypesoft.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+[Authorize(Roles = "admin")]
 public class DashboardController : ControllerBase
 {
     private readonly IMediator _mediator;

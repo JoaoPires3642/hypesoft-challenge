@@ -6,6 +6,9 @@ using MongoDB.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Hypesoft.Application.Behaviors;
 using FluentValidation;
@@ -33,7 +36,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
-        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+        options.SwaggerDoc("v1", new OpenApiInfo
         {
             Title = "Hypesoft Gestão de Produtos API",
             Version = "v1.0",
@@ -41,6 +44,33 @@ try
         });
         
         options.EnableAnnotations();
+
+        options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.OAuth2,
+            Flows = new OpenApiOAuthFlows
+            {
+                Implicit = new OpenApiOAuthFlow
+                {
+                    AuthorizationUrl = new Uri("http://localhost:8080/realms/hypesoft-realm/protocol/openid-connect/auth"),
+                    Scopes = new Dictionary<string, string>
+                    {
+                        { "openid", "OpenID" }
+                    }
+                }
+            }
+        });
+
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" }
+                },
+                new List<string> { "openid" }
+            }
+        });
         
         // Incluir XML comments para documentação
         var xmlFile = Path.Combine(AppContext.BaseDirectory, "Hypesoft.API.xml");
@@ -85,6 +115,25 @@ try
     // Cache em memória 
     builder.Services.AddDistributedMemoryCache();
 
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "http://localhost:8080/realms/hypesoft-realm";
+        options.RequireHttpsMetadata = false; // Apenas para dev/docker
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidAudience = "account", // Padrão do Keycloak
+            ValidateLifetime = true
+        };
+    });
+
+    builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+});
+
     // EF Core com MongoDB
     var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
     var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName") ?? throw new InvalidOperationException("DatabaseName not found");
@@ -107,6 +156,7 @@ try
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Hypesoft API v1");
             options.RoutePrefix = "swagger";
             options.DefaultModelsExpandDepth(2);
+            options.OAuthClientId("hypesoft-client");
         });
     }
 
@@ -133,6 +183,7 @@ try
 
     app.UseCors("AllowFrontend");
     app.UseHttpsRedirection();
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 
