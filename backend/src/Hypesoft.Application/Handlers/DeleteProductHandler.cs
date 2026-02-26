@@ -23,7 +23,7 @@ public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, bool>
         if (product is null) return false;
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
-        await _cache.RemoveAsync("products_all_");
+        await _cache.RemoveAsync("products_cache", cancellationToken);
 
         Log.Warning("Produto {ProductId} removido do sistema", request.Id);
         return true;

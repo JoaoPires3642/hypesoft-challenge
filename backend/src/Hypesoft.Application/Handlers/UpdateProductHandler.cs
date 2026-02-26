@@ -26,7 +26,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, bool>
         product.UpdateStock(request.StockQuantity);
 
         await _repository.UpdateAsync(product, cancellationToken);
-        await _cache.RemoveAsync("products_all_");
+        await _cache.RemoveAsync("products_cache", cancellationToken);
 
         Log.Information("Produto {ProductId} atualizado com sucesso", product.Id);
         return true;

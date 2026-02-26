@@ -9,7 +9,7 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
 {
     private readonly IProductRepository _repository;
     private readonly IDistributedCache _cache;
-    private const string CacheKey = "products_all_";
+    private const string CacheKeyPrefix = "products_cache";
 
     public GetProductsHandler(IProductRepository repository, IDistributedCache cache)
     {
@@ -19,16 +19,7 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
 
     public async Task<PagedResponse<ProductResponse>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
-        string currentCacheKey = $"{CacheKey}{request.PageNumber}_{request.PageSize}";
-        
-        // 1. Tenta obter do Cache
-        var cachedData = await _cache.GetStringAsync(currentCacheKey, cancellationToken);
-        if (!string.IsNullOrEmpty(cachedData))
-        {
-            return JsonSerializer.Deserialize<PagedResponse<ProductResponse>>(cachedData)!;
-        }
 
-        // 2. Se tiver vai ao Banco
         var (items, totalCount) = await _repository.GetAllPagedAsync(request.PageNumber, request.PageSize);
         
         var response = new PagedResponse<ProductResponse>(
@@ -37,12 +28,6 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
             request.PageSize,
             totalCount
         );
-
-        // 3. Salva no Cache por 10 minutos
-        var cacheOptions = new DistributedCacheEntryOptions {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-        };
-        await _cache.SetStringAsync(currentCacheKey, JsonSerializer.Serialize(response), cacheOptions, cancellationToken);
 
         return response;
     }

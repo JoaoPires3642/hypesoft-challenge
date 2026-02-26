@@ -32,7 +32,8 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Guid>
             );
 
             await _productRepository.AddAsync(product, cancellationToken);
-            await _cache.RemoveAsync("products_all_");
+            // Limpa cache de produtos após criar novo
+            await _cache.RemoveAsync("products_cache", cancellationToken);
             
 
             Log.Information("Produto {ProductName} criado com sucesso. ID: {ProductId}", 
