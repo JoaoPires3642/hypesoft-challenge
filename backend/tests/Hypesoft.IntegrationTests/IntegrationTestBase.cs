@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Hypesoft.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -15,6 +16,7 @@ public abstract class IntegrationTestBase : IClassFixture<ApiTestFactory>
         {
             BaseAddress = new Uri("https://localhost")
         });
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test");
     }
 
     protected ApiTestFactory Factory { get; }

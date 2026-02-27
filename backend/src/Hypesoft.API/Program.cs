@@ -165,12 +165,21 @@ try
         });
     }
 
-    // EF Core com MongoDB
-    var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
-    var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName") ?? throw new InvalidOperationException("DatabaseName not found");
+    // EF Core com MongoDB (ou InMemory para testes)
+    var useInMemoryDb = builder.Configuration.GetValue("USE_IN_MEMORY_DB", false);
+    if (useInMemoryDb)
+    {
+        builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase("HypesoftInMemory"));
+    }
+    else
+    {
+        var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
+        var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName") ?? throw new InvalidOperationException("DatabaseName not found");
 
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseMongoDB(connectionString, databaseName));
+        builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseMongoDB(connectionString, databaseName));
+    }
         
     
 
