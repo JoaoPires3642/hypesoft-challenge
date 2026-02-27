@@ -20,11 +20,99 @@ const CHART_COLORS = [
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://api:5000";
 
+export class ApiError extends Error {
+  status: number;
+  detail?: string;
+
+  constructor(message: string, status: number, detail?: string) {
+    super(message);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+type ErrorResponseBody = {
+  message?: string;
+  title?: string;
+  error?: string;
+  detail?: string;
+  errors?: Record<string, string[] | string>;
+};
+
+async function parseErrorDetail(response: Response): Promise<string | undefined> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const body = (await response.json()) as ErrorResponseBody | string;
+      if (typeof body === "string") return body.trim() || undefined;
+
+      if (body.detail) return body.detail;
+      if (body.message) return body.message;
+      if (body.title) return body.title;
+      if (body.error) return body.error;
+
+      if (body.errors) {
+        const firstKey = Object.keys(body.errors)[0];
+        const firstValue = firstKey ? body.errors[firstKey] : undefined;
+        if (Array.isArray(firstValue)) return firstValue[0];
+        if (typeof firstValue === "string") return firstValue;
+      }
+    } catch {
+      return undefined;
+    }
+  }
+
+  try {
+    const text = await response.text();
+    return text.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function toApiError(
+  response: Response,
+  fallbackMessage: string
+): Promise<ApiError> {
+  const detail = await parseErrorDetail(response);
+  const message = detail || fallbackMessage;
+  return new ApiError(message, response.status, detail);
+}
+
+export function getApiErrorMessage(
+  error: unknown,
+  fallbackMessage: string
+): string {
+  if (error instanceof ApiError) {
+    if (error.detail) return error.detail;
+    if (error.status >= 500) return "Erro interno do servidor. Tente novamente.";
+    if (error.status === 404) return "Recurso nao encontrado.";
+    if (error.status === 409) return "Conflito. Verifique os dados.";
+    if (error.status === 400) return "Dados invalidos. Verifique os campos.";
+    if (error.status === 401 || error.status === 403) {
+      return "Acesso nao autorizado.";
+    }
+    return error.message || fallbackMessage;
+  }
+
+  if (error instanceof Error) {
+    if (error.name === "TypeError") {
+      return "Falha de conexao com o servidor.";
+    }
+    return error.message || fallbackMessage;
+  }
+
+  return fallbackMessage;
+}
+
 //  categoryId para category name
 async function mapProductsWithCategories(items: any[]): Promise<Product[]> {
   try {
     const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories`);
-    if (!categoriesResponse.ok) throw new Error("Falha ao buscar categorias");
+    if (!categoriesResponse.ok) {
+      throw await toApiError(categoriesResponse, "Falha ao buscar categorias");
+    }
     const categoriesData = await categoriesResponse.json();
     const categories = Array.isArray(categoriesData) ? categoriesData : [];
     
@@ -57,7 +145,9 @@ export async function fetchProducts(
 
     if (filters?.search && filters.search.trim()) {
       response = await fetch(`${API_BASE_URL}/api/products/search?name=${encodeURIComponent(filters.search)}`);
-      if (!response.ok) throw new Error("Falha ao buscar produtos");
+      if (!response.ok) {
+        throw await toApiError(response, "Falha ao buscar produtos");
+      }
       const data = await response.json();
       
       const items = await mapProductsWithCategories(Array.isArray(data) ? data : []);
@@ -73,7 +163,12 @@ export async function fetchProducts(
 
     if (filters?.categoryId && filters.categoryId !== "all") {
       response = await fetch(`${API_BASE_URL}/api/products/category/${filters.categoryId}`);
-      if (!response.ok) throw new Error("Falha ao buscar produtos por categoria");
+      if (!response.ok) {
+        throw await toApiError(
+          response,
+          "Falha ao buscar produtos por categoria"
+        );
+      }
       const data = await response.json();
       
       const items = await mapProductsWithCategories(Array.isArray(data) ? data : []);
@@ -92,7 +187,9 @@ export async function fetchProducts(
     if (filters?.pageSize) params.append("pageSize", filters.pageSize.toString());
 
     response = await fetch(`${url}?${params}`);
-    if (!response.ok) throw new Error("Falha ao buscar produtos");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao buscar produtos");
+    }
     const data = await response.json();
 
     // Mapear stockQuantity (backend) para quantity (frontend) e adicionar categoria
@@ -121,7 +218,9 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
     if (response.status === 404) return null;
-    if (!response.ok) throw new Error("Falha ao buscar produto");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao buscar produto");
+    }
     const data = await response.json();
     
     // Mapear e adicionar categoria
@@ -148,7 +247,9 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error("Falha ao criar produto");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao criar produto");
+    }
     const productId = await response.json();
     return {
       id: productId,
@@ -182,8 +283,9 @@ export async function updateProduct(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (response.status === 404) throw new Error("Produto não encontrado");
-    if (!response.ok) throw new Error("Falha ao atualizar produto");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao atualizar produto");
+    }
     return {
       id,
       ...data,
@@ -201,8 +303,9 @@ export async function deleteProduct(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
       method: "DELETE",
     });
-    if (response.status === 404) throw new Error("Produto não encontrado");
-    if (!response.ok) throw new Error("Falha ao deletar produto");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao deletar produto");
+    }
   } catch (error) {
     console.error("Erro ao deletar produto:", error);
     throw error;
@@ -214,7 +317,9 @@ export async function deleteProduct(id: string): Promise<void> {
 export async function fetchCategories(): Promise<Category[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/categories`);
-    if (!response.ok) throw new Error("Falha ao buscar categorias");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao buscar categorias");
+    }
     const data = await response.json();
     const items = Array.isArray(data) ? data : [];
     return items.map((cat: any) => ({
@@ -234,7 +339,9 @@ export async function createCategory(data: CategoryFormData): Promise<Category> 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error("Falha ao criar categoria");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao criar categoria");
+    }
     const categoryId = await response.json();
     return {
       id: categoryId,
@@ -252,8 +359,9 @@ export async function deleteCategory(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
       method: "DELETE",
     });
-    if (response.status === 404) throw new Error("Categoria não encontrada");
-    if (!response.ok) throw new Error("Falha ao deletar categoria");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao deletar categoria");
+    }
   } catch (error) {
     console.error("Erro ao deletar categoria:", error);
     throw error;
@@ -265,7 +373,9 @@ export async function deleteCategory(id: string): Promise<void> {
 export async function fetchDashboardSummary() {
   try {
     const response = await fetch(`${API_BASE_URL}/api/dashboard`);
-    if (!response.ok) throw new Error("Falha ao buscar dashboard");
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao buscar dashboard");
+    }
     return await response.json();
   } catch (error) {
     console.error("Erro ao buscar dashboard:", error);

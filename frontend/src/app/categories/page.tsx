@@ -31,11 +31,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useCategories, useCreateCategory, useDeleteCategory } from "@/src/hooks/use-categories";
+import { getApiErrorMessage } from "@/src/services/api";
 import type { Category } from "@/src/types";
 
 const categorySchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "O nome deve ter pelo menos 2 caracteres")
     .max(50, "O nome deve ter no máximo 50 caracteres"),
 });
@@ -64,8 +66,8 @@ export default function CategoriasPage() {
         await createMutation.mutateAsync(data);
         toast.success("Categoria criada com sucesso!");
         reset();
-      } catch {
-        toast.error("Erro ao criar categoria.");
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Erro ao criar categoria."));
       }
     },
     [createMutation, reset]
@@ -77,8 +79,8 @@ export default function CategoriasPage() {
       await deleteMutation.mutateAsync(deleteTarget.id);
       toast.success("Categoria excluída com sucesso!");
       setDeleteTarget(null);
-    } catch {
-      toast.error("Erro ao excluir categoria.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Erro ao excluir categoria."));
     }
   }, [deleteTarget, deleteMutation]);
 
@@ -114,7 +116,11 @@ export default function CategoriasPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+              noValidate
+            >
               <div className="space-y-1.5">
                 <Label htmlFor="cat-name">Nome da Categoria</Label>
                 <Input

@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/src/hooks/use-products";
 import { useCategories } from "@/src/hooks/use-categories";
 import { ProductFormDialog } from "@/src/components/forms/product-form-dialog";
+import { getApiErrorMessage } from "@/src/services/api";
 import type { Product, ProductFormData } from "@/src/types";
 
 function formatCurrency(value: number): string {
@@ -90,8 +91,10 @@ export function ProductsDataTable() {
         }
         setFormOpen(false);
         setEditingProduct(null);
-      } catch {
-        toast.error("Erro ao salvar produto. Tente novamente.");
+      } catch (error) {
+        toast.error(
+          getApiErrorMessage(error, "Erro ao salvar produto. Tente novamente.")
+        );
       }
     },
     [editingProduct, createMutation, updateMutation]
@@ -103,8 +106,8 @@ export function ProductsDataTable() {
       await deleteMutation.mutateAsync(deleteTarget.id);
       toast.success("Produto excluído com sucesso!");
       setDeleteTarget(null);
-    } catch {
-      toast.error("Erro ao excluir produto.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Erro ao excluir produto."));
     }
   }, [deleteTarget, deleteMutation]);
 

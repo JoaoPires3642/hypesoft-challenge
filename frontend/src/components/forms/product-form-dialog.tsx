@@ -30,10 +30,12 @@ import type { Product } from "@/src/types";
 const productSchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "O nome deve ter pelo menos 2 caracteres")
     .max(100, "O nome deve ter no máximo 100 caracteres"),
   description: z
     .string()
+    .trim()
     .min(5, "A descrição deve ter pelo menos 5 caracteres")
     .max(500, "A descrição deve ter no máximo 500 caracteres"),
   price: z
