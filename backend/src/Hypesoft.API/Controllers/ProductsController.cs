@@ -14,7 +14,6 @@ namespace Hypesoft.API.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Authorize]
-[Authorize(Roles = "admin")]
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;

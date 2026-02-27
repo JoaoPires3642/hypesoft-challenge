@@ -9,6 +9,7 @@ COPY src/Hypesoft.Application/Hypesoft.Application.csproj ./src/Hypesoft.Applica
 COPY src/Hypesoft.Domain/Hypesoft.Domain.csproj ./src/Hypesoft.Domain/
 COPY src/Hypesoft.Infrastructure/Hypesoft.Infrastructure.csproj ./src/Hypesoft.Infrastructure/
 COPY tests/Hypesoft.UnitTests/Hypesoft.UnitTests.csproj ./tests/Hypesoft.UnitTests/
+COPY tests/Hypesoft.IntegrationTests/Hypesoft.IntegrationTests.csproj ./tests/Hypesoft.IntegrationTests/
 
 # Restore dependencies
 RUN dotnet restore

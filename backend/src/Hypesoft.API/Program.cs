@@ -16,6 +16,8 @@ using Serilog;
 using Hypesoft.Application.Behaviors;
 using FluentValidation;
 using MediatR;
+using System.Security.Claims;
+using System.Text.Json;
 
 try
 {
@@ -23,7 +25,9 @@ try
     
     var builder = WebApplication.CreateBuilder(args);
 
-    var keycloakAuthority = builder.Configuration["KEYCLOAK_AUTHORITY"] ?? "http://localhost:8080/realms/hypesoft-realm";
+   
+    var keycloakInternalUrl = builder.Configuration["KEYCLOAK_INTERNAL_URL"] ?? "http://keycloak:8080/realms/hypesoft-realm";
+    var keycloakExternalUrl = builder.Configuration["KEYCLOAK_EXTERNAL_URL"] ?? "http://localhost:8080/realms/hypesoft-realm";
     var keycloakAudience = builder.Configuration["KEYCLOAK_AUDIENCE"] ?? "account";
     var disableAuth = builder.Configuration.GetValue("DISABLE_AUTH", false);
     var corsOrigins = builder.Configuration["CORS_ORIGINS"]
@@ -68,7 +72,7 @@ try
                 {
                     Implicit = new OpenApiOAuthFlow
                     {
-                        AuthorizationUrl = new Uri($"{keycloakAuthority}/protocol/openid-connect/auth"),
+                        AuthorizationUrl = new Uri($"{keycloakExternalUrl}/protocol/openid-connect/auth"),
                         Scopes = new Dictionary<string, string>
                         {
                             { "openid", "OpenID" }
@@ -141,21 +145,21 @@ try
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = keycloakAuthority;
+                // Use internal URL for fetching OIDC configuration (container to container)
+                options.MetadataAddress = $"{keycloakInternalUrl}/.well-known/openid-configuration";
                 options.RequireHttpsMetadata = false; // Apenas para dev/docker
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
+                    // Accept both internal and external issuer URLs
+                    ValidIssuers = new[] { keycloakInternalUrl, keycloakExternalUrl },
                     ValidateAudience = true,
                     ValidAudience = keycloakAudience,
                     ValidateLifetime = true
                 };
             });
 
-        builder.Services.AddAuthorization(options =>
-        {
-            options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-        });
+        builder.Services.AddAuthorization();
     }
     else
     {

@@ -28,8 +28,12 @@ services:
       - ConnectionStrings__MongoDb=${ConnectionStrings__MongoDb}
       - ConnectionStrings__DatabaseName=${ConnectionStrings__DatabaseName}
       - DISABLE_AUTH=${DISABLE_AUTH}
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080/realms/hypesoft-realm
+      - KEYCLOAK_EXTERNAL_URL=http://localhost:8080/realms/hypesoft-realm
+      - KEYCLOAK_AUDIENCE=account
     depends_on:
       - mongodb
+      - keycloak
     networks:
       - hypesoft-network
 
