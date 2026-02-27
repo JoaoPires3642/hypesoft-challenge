@@ -1,5 +1,7 @@
+using AutoMapper;
 using FluentAssertions;
 using Hypesoft.Application.DTOs;
+using Hypesoft.Application.Mappings;
 using Hypesoft.Application.Queries;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
@@ -17,6 +19,7 @@ public class GetProductsHandlerTests
     {
         var repositoryMock = new Mock<IProductRepository>();
         var cacheMock = new Mock<IDistributedCache>();
+        var mapper = CreateMapper();
         var categoryId = Guid.NewGuid();
         var product = new Product("Prod", "Desc", 1m, 1, categoryId);
 
@@ -24,7 +27,7 @@ public class GetProductsHandlerTests
             .Setup(r => r.GetAllPagedAsync(1, 10))
             .ReturnsAsync(([product], 1));
 
-        var handler = new GetProductsHandler(repositoryMock.Object, cacheMock.Object);
+        var handler = new GetProductsHandler(repositoryMock.Object, cacheMock.Object, mapper);
 
         var result = await handler.Handle(new GetProductsQuery(1, 10), CancellationToken.None);
 
@@ -38,6 +41,7 @@ public class GetProductsHandlerTests
     {
         var repositoryMock = new Mock<IProductRepository>();
         var cacheMock = new Mock<IDistributedCache>();
+        var mapper = CreateMapper();
         var categoryId = Guid.NewGuid();
         var items = new List<Product>
         {
@@ -49,12 +53,21 @@ public class GetProductsHandlerTests
             .Setup(r => r.GetAllPagedAsync(1, 10))
             .ReturnsAsync((items.AsEnumerable(), items.Count));
 
-        var handler = new GetProductsHandler(repositoryMock.Object, cacheMock.Object);
+        var handler = new GetProductsHandler(repositoryMock.Object, cacheMock.Object, mapper);
 
         var result = await handler.Handle(new GetProductsQuery(1, 10), CancellationToken.None);
 
         result.TotalCount.Should().Be(2);
         result.Items.Should().HaveCount(2);
         repositoryMock.Verify(r => r.GetAllPagedAsync(1, 10), Times.Once);
+    }
+
+    private static IMapper CreateMapper()
+    {
+        var config = new MapperConfiguration(cfg =>
+        {
+            cfg.AddProfile<ProductMappingProfile>();
+        });
+        return config.CreateMapper();
     }
 }

@@ -1,4 +1,6 @@
+using AutoMapper;
 using FluentAssertions;
+using Hypesoft.Application.Mappings;
 using Hypesoft.Application.Queries;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
@@ -12,6 +14,7 @@ public class GetLowStockProductsHandlerTests
     public async Task Handle_ShouldRequestThreshold10_AndMapResponse()
     {
         var repositoryMock = new Mock<IProductRepository>();
+        var mapper = CreateMapper();
         var categoryId = Guid.NewGuid();
         var products = new List<Product>
         {
@@ -22,12 +25,21 @@ public class GetLowStockProductsHandlerTests
             .Setup(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
-        var handler = new GetLowStockProductsHandler(repositoryMock.Object);
+        var handler = new GetLowStockProductsHandler(repositoryMock.Object, mapper);
 
         var result = (await handler.Handle(new GetLowStockProductsQuery(), CancellationToken.None)).ToList();
 
         result.Should().HaveCount(1);
         result[0].IsStockLow.Should().BeTrue();
         repositoryMock.Verify(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private static IMapper CreateMapper()
+    {
+        var config = new MapperConfiguration(cfg =>
+        {
+            cfg.AddProfile<ProductMappingProfile>();
+        });
+        return config.CreateMapper();
     }
 }

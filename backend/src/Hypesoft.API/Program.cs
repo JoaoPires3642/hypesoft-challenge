@@ -115,6 +115,9 @@ try
     //Validation
     builder.Services.AddValidatorsFromAssembly(typeof(Hypesoft.Application.Validators.CreateProductValidator).Assembly);
 
+    // AutoMapper
+    builder.Services.AddAutoMapper(typeof(Hypesoft.Application.Mappings.ProductMappingProfile).Assembly);
+
     // MediatR
     builder.Services.AddMediatR(cfg => 
     {

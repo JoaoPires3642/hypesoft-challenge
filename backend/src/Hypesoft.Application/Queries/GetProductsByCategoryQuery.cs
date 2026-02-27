@@ -1,3 +1,4 @@
+using AutoMapper;
 using MediatR;
 using Hypesoft.Application.DTOs;
 using Hypesoft.Domain.Repositories;
@@ -9,24 +10,17 @@ public record GetProductsByCategoryQuery(Guid CategoryId) : IRequest<IEnumerable
 public class GetProductsByCategoryHandler : IRequestHandler<GetProductsByCategoryQuery, IEnumerable<ProductResponse>>
 {
     private readonly IProductRepository _repository;
+    private readonly IMapper _mapper;
 
-    public GetProductsByCategoryHandler(IProductRepository repository)
+    public GetProductsByCategoryHandler(IProductRepository repository, IMapper mapper)
     {
         _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<ProductResponse>> Handle(GetProductsByCategoryQuery request, CancellationToken cancellationToken)
     {
         var products = await _repository.GetByCategoryIdAsync(request.CategoryId, cancellationToken);
-        
-        return products.Select(p => new ProductResponse(
-            p.Id, 
-            p.Name, 
-            p.Description, 
-            p.Price, 
-            p.StockQuantity, 
-            p.CategoryId, 
-            p.IsStockLow()
-        ));
+        return _mapper.Map<IEnumerable<ProductResponse>>(products);
     }
 }

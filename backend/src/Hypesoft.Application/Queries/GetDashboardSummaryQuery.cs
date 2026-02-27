@@ -1,3 +1,4 @@
+using AutoMapper;
 using Hypesoft.Application.DTOs;
 using Hypesoft.Domain.Repositories;
 using Hypesoft.Domain.Queries;
@@ -12,12 +13,14 @@ public class GetDashboardSummaryHandler : IRequestHandler<GetDashboardSummaryQue
     private readonly IProductRepository _productRepo;
     private readonly ICategoryRepository _categoryRepo;
     private readonly IProductQueryService _queryService;
+    private readonly IMapper _mapper;
 
-    public GetDashboardSummaryHandler(IProductRepository productRepo, ICategoryRepository categoryRepo, IProductQueryService queryService)
+    public GetDashboardSummaryHandler(IProductRepository productRepo, ICategoryRepository categoryRepo, IProductQueryService queryService, IMapper mapper)
     {
         _productRepo = productRepo;
         _categoryRepo = categoryRepo;
         _queryService = queryService;
+        _mapper = mapper;
     }
 
     public async Task<DashboardResponse> Handle(GetDashboardSummaryQuery request, CancellationToken cancellationToken)
@@ -40,7 +43,7 @@ public class GetDashboardSummaryHandler : IRequestHandler<GetDashboardSummaryQue
         return new DashboardResponse(
             totalCountTask.Result,
             totalValueTask.Result,
-            lowStockTask.Result.Select(p => new ProductResponse(p.Id, p.Name, p.Description, p.Price, p.StockQuantity, p.CategoryId, true)),
+            _mapper.Map<IEnumerable<ProductResponse>>(lowStockTask.Result),
             chartData
         );
     }

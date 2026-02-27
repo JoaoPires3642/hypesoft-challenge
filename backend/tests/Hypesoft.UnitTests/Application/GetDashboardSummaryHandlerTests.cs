@@ -1,4 +1,6 @@
+using AutoMapper;
 using FluentAssertions;
+using Hypesoft.Application.Mappings;
 using Hypesoft.Application.Queries;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
@@ -15,6 +17,7 @@ public class GetDashboardSummaryHandlerTests
         var productRepoMock = new Mock<IProductRepository>();
         var categoryRepoMock = new Mock<ICategoryRepository>();
         var queryServiceMock = new Mock<IProductQueryService>();
+        var mapper = CreateMapper();
 
         var cat1 = new Category("Periféricos");
         var cat2 = new Category("Monitores");
@@ -30,7 +33,7 @@ public class GetDashboardSummaryHandlerTests
         productRepoMock.Setup(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(lowStockProducts);
         categoryRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Category> { cat1, cat2 });
 
-        var handler = new GetDashboardSummaryHandler(productRepoMock.Object, categoryRepoMock.Object, queryServiceMock.Object);
+        var handler = new GetDashboardSummaryHandler(productRepoMock.Object, categoryRepoMock.Object, queryServiceMock.Object, mapper);
 
         var result = await handler.Handle(new GetDashboardSummaryQuery(), CancellationToken.None);
 
@@ -39,5 +42,14 @@ public class GetDashboardSummaryHandlerTests
         result.LowStockProducts.Should().HaveCount(1);
         result.ProductsByCategory.Should().Contain(c => c.CategoryName == "Periféricos" && c.ProductCount == 5);
         result.ProductsByCategory.Should().Contain(c => c.CategoryName == "Monitores" && c.ProductCount == 0);
+    }
+
+    private static IMapper CreateMapper()
+    {
+        var config = new MapperConfiguration(cfg =>
+        {
+            cfg.AddProfile<ProductMappingProfile>();
+        });
+        return config.CreateMapper();
     }
 }

@@ -1,3 +1,4 @@
+using AutoMapper;
 using Hypesoft.Application.DTOs;
 using Hypesoft.Application.Queries;
 using Hypesoft.Application.Infrastructure.Cache;
@@ -10,15 +11,17 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
 {
     private readonly IProductRepository _repository;
     private readonly IDistributedCache _cache;
+    private readonly IMapper _mapper;
     private static readonly DistributedCacheEntryOptions _cacheOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
     };
 
-    public GetProductsHandler(IProductRepository repository, IDistributedCache cache)
+    public GetProductsHandler(IProductRepository repository, IDistributedCache cache, IMapper mapper)
     {
         _repository = repository;
         _cache = cache;
+        _mapper = mapper;
     }
 
     public async Task<PagedResponse<ProductResponse>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
@@ -36,7 +39,7 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
         var (items, totalCount) = await _repository.GetAllPagedAsync(request.PageNumber, request.PageSize);
         
         var response = new PagedResponse<ProductResponse>(
-            items.Select(p => new ProductResponse(p.Id, p.Name, p.Description, p.Price, p.StockQuantity, p.CategoryId, p.IsStockLow())),
+            _mapper.Map<IEnumerable<ProductResponse>>(items),
             request.PageNumber,
             request.PageSize,
             totalCount
