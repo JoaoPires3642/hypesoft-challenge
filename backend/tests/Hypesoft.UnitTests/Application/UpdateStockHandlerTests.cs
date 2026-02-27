@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Hypesoft.Application.Commands;
+using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
-using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 
 namespace Hypesoft.UnitTests.Application;
@@ -13,7 +13,7 @@ public class UpdateStockHandlerTests
     public async Task Handle_ShouldReturnFalse_WhenProductNotFound()
     {
         var repositoryMock = new Mock<IProductRepository>();
-        var cacheMock = new Mock<IDistributedCache>();
+        var cacheMock = new Mock<ICacheInvalidator>();
         repositoryMock
             .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
@@ -24,14 +24,14 @@ public class UpdateStockHandlerTests
 
         result.Should().BeFalse();
         repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
-        cacheMock.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        cacheMock.Verify(c => c.InvalidateProductCache(It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Handle_ShouldUpdateStockAndInvalidateCache_WhenProductExists()
     {
         var repositoryMock = new Mock<IProductRepository>();
-        var cacheMock = new Mock<IDistributedCache>();
+        var cacheMock = new Mock<ICacheInvalidator>();
         var product = new Product("Produto", "Desc", 10m, 2, Guid.NewGuid());
 
         repositoryMock
@@ -45,6 +45,6 @@ public class UpdateStockHandlerTests
         result.Should().BeTrue();
         product.StockQuantity.Should().Be(15);
         repositoryMock.Verify(r => r.UpdateAsync(product, It.IsAny<CancellationToken>()), Times.Once);
-        cacheMock.Verify(c => c.RemoveAsync("products_all_", It.IsAny<CancellationToken>()), Times.Once);
+        cacheMock.Verify(c => c.InvalidateProductCache(product.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

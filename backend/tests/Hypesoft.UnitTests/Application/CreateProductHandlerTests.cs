@@ -2,23 +2,23 @@ using Moq;
 using FluentAssertions;
 using Hypesoft.Application.Commands;
 using Hypesoft.Application.Handlers;
+using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace Hypesoft.UnitTests.Application;
 
 public class CreateProductHandlerTests
 {
     private readonly Mock<IProductRepository> _repositoryMock;
-    private readonly Mock<IDistributedCache> _cacheMock;
+    private readonly Mock<ICacheInvalidator> _cacheInvalidatorMock;
     private readonly CreateProductHandler _handler;
 
     public CreateProductHandlerTests()
     {
         _repositoryMock = new Mock<IProductRepository>();
-        _cacheMock = new Mock<IDistributedCache>();
-        _handler = new CreateProductHandler(_repositoryMock.Object, _cacheMock.Object);
+        _cacheInvalidatorMock = new Mock<ICacheInvalidator>();
+        _handler = new CreateProductHandler(_repositoryMock.Object, _cacheInvalidatorMock.Object);
     }
 
     [Fact]
@@ -33,6 +33,13 @@ public class CreateProductHandlerTests
         // Assert
         result.Should().NotBeEmpty();
         _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.RemoveAsync("products_cache", It.IsAny<CancellationToken>()), Times.Once);
+        _cacheInvalidatorMock.Verify(
+            c => c.InvalidateProductCache(null, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+        _cacheInvalidatorMock.Verify(
+            c => c.InvalidateCategoryProductsCache(command.CategoryId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 }
