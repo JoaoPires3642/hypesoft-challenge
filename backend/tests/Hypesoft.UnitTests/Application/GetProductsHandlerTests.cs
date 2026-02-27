@@ -13,20 +13,16 @@ namespace Hypesoft.UnitTests.Application;
 public class GetProductsHandlerTests
 {
     [Fact]
-    public async Task Handle_ShouldReturnFromCache_WhenCacheHasData()
+    public async Task Handle_ShouldReturnProductsFromRepository()
     {
         var repositoryMock = new Mock<IProductRepository>();
         var cacheMock = new Mock<IDistributedCache>();
-        var cached = new PagedResponse<ProductResponse>(
-            [new ProductResponse(Guid.NewGuid(), "Prod", "Desc", 1m, 1, Guid.NewGuid(), true)],
-            1,
-            10,
-            1);
+        var categoryId = Guid.NewGuid();
+        var product = new Product("Prod", "Desc", 1m, 1, categoryId);
 
-        var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(cached));
-        cacheMock
-            .Setup(c => c.GetAsync("products_all_1_10", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(bytes);
+        repositoryMock
+            .Setup(r => r.GetAllPagedAsync(1, 10))
+            .ReturnsAsync(([product], 1));
 
         var handler = new GetProductsHandler(repositoryMock.Object, cacheMock.Object);
 
@@ -34,11 +30,11 @@ public class GetProductsHandlerTests
 
         result.TotalCount.Should().Be(1);
         result.Items.Should().HaveCount(1);
-        repositoryMock.Verify(r => r.GetAllPagedAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        repositoryMock.Verify(r => r.GetAllPagedAsync(1, 10), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_ShouldReadRepositoryAndCache_WhenCacheMiss()
+    public async Task Handle_ShouldReturnMultipleProducts()
     {
         var repositoryMock = new Mock<IProductRepository>();
         var cacheMock = new Mock<IDistributedCache>();
@@ -49,9 +45,6 @@ public class GetProductsHandlerTests
             new("Teclado", "Mecânico", 300m, 20, categoryId)
         };
 
-        cacheMock
-            .Setup(c => c.GetAsync("products_all_1_10", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((byte[]?)null);
         repositoryMock
             .Setup(r => r.GetAllPagedAsync(1, 10))
             .ReturnsAsync((items.AsEnumerable(), items.Count));
@@ -62,10 +55,6 @@ public class GetProductsHandlerTests
 
         result.TotalCount.Should().Be(2);
         result.Items.Should().HaveCount(2);
-        cacheMock.Verify(c => c.SetAsync(
-            "products_all_1_10",
-            It.IsAny<byte[]>(),
-            It.IsAny<DistributedCacheEntryOptions>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+        repositoryMock.Verify(r => r.GetAllPagedAsync(1, 10), Times.Once);
     }
 }

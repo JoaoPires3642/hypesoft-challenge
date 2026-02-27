@@ -45,6 +45,6 @@ public class DeleteProductHandlerTests
 
         result.Should().BeTrue();
         repositoryMock.Verify(r => r.DeleteAsync(product.Id, It.IsAny<CancellationToken>()), Times.Once);
-        cacheMock.Verify(c => c.RemoveAsync("products_all_", It.IsAny<CancellationToken>()), Times.Once);
+        cacheMock.Verify(c => c.RemoveAsync("products_cache", It.IsAny<CancellationToken>()), Times.Once);
     }
 }

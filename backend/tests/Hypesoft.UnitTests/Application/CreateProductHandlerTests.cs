@@ -33,6 +33,6 @@ public class CreateProductHandlerTests
         // Assert
         result.Should().NotBeEmpty();
         _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
-        _cacheMock.Verify(c => c.RemoveAsync("products_all_", It.IsAny<CancellationToken>()), Times.Once);
+        _cacheMock.Verify(c => c.RemoveAsync("products_cache", It.IsAny<CancellationToken>()), Times.Once);
     }
 }

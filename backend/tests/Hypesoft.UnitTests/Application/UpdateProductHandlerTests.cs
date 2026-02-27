@@ -47,7 +47,7 @@ public class UpdateProductHandlerTests
 
         result.Should().BeTrue();
         repositoryMock.Verify(r => r.UpdateAsync(product, It.IsAny<CancellationToken>()), Times.Once);
-        cacheMock.Verify(c => c.RemoveAsync("products_all_", It.IsAny<CancellationToken>()), Times.Once);
+        cacheMock.Verify(c => c.RemoveAsync("products_cache", It.IsAny<CancellationToken>()), Times.Once);
         product.Name.Should().Be("Novo");
         product.StockQuantity.Should().Be(8);
     }
