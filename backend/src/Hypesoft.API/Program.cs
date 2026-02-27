@@ -1,6 +1,8 @@
 using Hypesoft.Infrastructure.Data;
 using Hypesoft.Infrastructure.Repositories;
+using Hypesoft.Infrastructure.Queries;
 using Hypesoft.Domain.Repositories;
+using Hypesoft.Domain.Queries;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -22,6 +24,7 @@ try
 
     var keycloakAuthority = builder.Configuration["KEYCLOAK_AUTHORITY"] ?? "http://localhost:8080/realms/hypesoft-realm";
     var keycloakAudience = builder.Configuration["KEYCLOAK_AUDIENCE"] ?? "account";
+    var disableAuth = builder.Configuration.GetValue("DISABLE_AUTH", false);
     var corsOrigins = builder.Configuration["CORS_ORIGINS"]
         ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         ?? new[]
@@ -55,32 +58,35 @@ try
         
         options.EnableAnnotations();
 
-        options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+        if (!disableAuth)
         {
-            Type = SecuritySchemeType.OAuth2,
-            Flows = new OpenApiOAuthFlows
+            options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
             {
-                Implicit = new OpenApiOAuthFlow
+                Type = SecuritySchemeType.OAuth2,
+                Flows = new OpenApiOAuthFlows
                 {
-                    AuthorizationUrl = new Uri($"{keycloakAuthority}/protocol/openid-connect/auth"),
-                    Scopes = new Dictionary<string, string>
+                    Implicit = new OpenApiOAuthFlow
                     {
-                        { "openid", "OpenID" }
+                        AuthorizationUrl = new Uri($"{keycloakAuthority}/protocol/openid-connect/auth"),
+                        Scopes = new Dictionary<string, string>
+                        {
+                            { "openid", "OpenID" }
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
-                new OpenApiSecurityScheme
                 {
-                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" }
-                },
-                new List<string> { "openid" }
-            }
-        });
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" }
+                    },
+                    new List<string> { "openid" }
+                }
+            });
+        }
         
         // Incluir XML comments para documentação
         var xmlFile = Path.Combine(AppContext.BaseDirectory, "Hypesoft.API.xml");
@@ -119,27 +125,43 @@ try
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
     builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
+    // Query Services
+    builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
+
     // Cache em memória 
     builder.Services.AddDistributedMemoryCache();
 
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    if (!disableAuth)
     {
-        options.Authority = keycloakAuthority;
-        options.RequireHttpsMetadata = false; // Apenas para dev/docker
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidAudience = keycloakAudience,
-            ValidateLifetime = true
-        };
-    });
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = keycloakAuthority;
+                options.RequireHttpsMetadata = false; // Apenas para dev/docker
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = keycloakAudience,
+                    ValidateLifetime = true
+                };
+            });
 
-    builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-});
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+        });
+    }
+    else
+    {
+        builder.Services.AddAuthorization(options =>
+        {
+            options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                .RequireAssertion(_ => true)
+                .Build();
+            options.FallbackPolicy = options.DefaultPolicy;
+        });
+    }
 
     // EF Core com MongoDB
     var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
@@ -190,7 +212,10 @@ try
 
     app.UseCors("AllowFrontend");
     app.UseHttpsRedirection();
-    app.UseAuthentication();
+    if (!disableAuth)
+    {
+        app.UseAuthentication();
+    }
     app.UseAuthorization();
     app.MapControllers();
 

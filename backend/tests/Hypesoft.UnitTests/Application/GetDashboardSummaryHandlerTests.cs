@@ -2,6 +2,7 @@ using FluentAssertions;
 using Hypesoft.Application.Queries;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
+using Hypesoft.Domain.Queries;
 using Moq;
 
 namespace Hypesoft.UnitTests.Application;
@@ -13,6 +14,7 @@ public class GetDashboardSummaryHandlerTests
     {
         var productRepoMock = new Mock<IProductRepository>();
         var categoryRepoMock = new Mock<ICategoryRepository>();
+        var queryServiceMock = new Mock<IProductQueryService>();
 
         var cat1 = new Category("Periféricos");
         var cat2 = new Category("Monitores");
@@ -21,14 +23,14 @@ public class GetDashboardSummaryHandlerTests
             new("Mouse", "Sem fio", 100m, 2, cat1.Id)
         };
 
-        productRepoMock.Setup(r => r.GetTotalCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(12);
-        productRepoMock.Setup(r => r.GetTotalStockValueAsync(It.IsAny<CancellationToken>())).ReturnsAsync(25000m);
-        productRepoMock.Setup(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(lowStockProducts);
-        productRepoMock.Setup(r => r.GetCountByCategoryAsync(It.IsAny<CancellationToken>()))
+        queryServiceMock.Setup(r => r.GetTotalCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(12);
+        queryServiceMock.Setup(r => r.GetTotalStockValueAsync(It.IsAny<CancellationToken>())).ReturnsAsync(25000m);
+        queryServiceMock.Setup(r => r.GetCountByCategoryAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, int> { [cat1.Id] = 5 });
+        productRepoMock.Setup(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(lowStockProducts);
         categoryRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Category> { cat1, cat2 });
 
-        var handler = new GetDashboardSummaryHandler(productRepoMock.Object, categoryRepoMock.Object);
+        var handler = new GetDashboardSummaryHandler(productRepoMock.Object, categoryRepoMock.Object, queryServiceMock.Object);
 
         var result = await handler.Handle(new GetDashboardSummaryQuery(), CancellationToken.None);
 

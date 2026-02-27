@@ -27,6 +27,7 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ConnectionStrings__MongoDb=${ConnectionStrings__MongoDb}
       - ConnectionStrings__DatabaseName=${ConnectionStrings__DatabaseName}
+      - DISABLE_AUTH=${DISABLE_AUTH}
     depends_on:
       - mongodb
     networks:

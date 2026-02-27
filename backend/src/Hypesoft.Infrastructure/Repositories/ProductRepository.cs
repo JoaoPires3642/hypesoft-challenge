@@ -71,36 +71,6 @@ public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, Can
         .ToListAsync(cancellationToken);
 }
 
-public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
-    => await _context.Products.CountAsync(cancellationToken);
-
-public async Task<decimal> GetTotalStockValueAsync(CancellationToken cancellationToken = default)
-{
-    var stockSnapshot = await _context.Products
-        .AsNoTracking()
-        .Select(p => new { p.Price, p.StockQuantity })
-        .ToListAsync(cancellationToken);
-
-    return stockSnapshot.Sum(p => p.Price * p.StockQuantity);
-}
-
-public async Task<Dictionary<Guid, int>> GetCountByCategoryAsync(CancellationToken cancellationToken = default)
-{
-    var categoryIds = await _context.Products
-        .AsNoTracking()
-        .Select(p => p.CategoryId)
-        .ToListAsync(cancellationToken);
-
-    return categoryIds
-        .GroupBy(categoryId => categoryId)
-        .ToDictionary(group => group.Key, group => group.Count());
-}
-
-    public Task<IEnumerable<Product>> SearchAsync(string? name)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task<(IEnumerable<Product> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize)
 {
     var query = _context.Products.AsNoTracking();
