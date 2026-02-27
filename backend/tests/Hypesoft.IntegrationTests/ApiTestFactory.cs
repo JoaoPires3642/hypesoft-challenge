@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Hypesoft.Infrastructure.Data;
 
 namespace Hypesoft.IntegrationTests;
 
@@ -22,7 +24,7 @@ public class ApiTestFactory : WebApplicationFactory<Program>
             {
                 ["USE_IN_MEMORY_DB"] = "true",
                 ["ConnectionStrings:MongoDb"] = "mongodb://localhost:27017",
-                ["ConnectionStrings:DatabaseName"] = "integration-tests"
+                ["ConnectionStrings:DatabaseName"] = _databaseName
             };
 
             config.AddInMemoryCollection(settings);
@@ -30,6 +32,16 @@ public class ApiTestFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            // Remove o DbContext existente e adiciona um novo com nome de banco único
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+            
+            if (descriptor != null)
+                services.Remove(descriptor);
+
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase(_databaseName));
+
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = "Test";

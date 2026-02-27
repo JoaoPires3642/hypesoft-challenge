@@ -38,9 +38,12 @@ public class ProductQueryService : IProductQueryService
     /// </summary>
     public async Task<Dictionary<Guid, int>> GetCountByCategoryAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Products
+        var products = await _context.Products
             .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        
+        return products
             .GroupBy(p => p.CategoryId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken);
+            .ToDictionary(g => g.Key, g => g.Count());
     }
 }

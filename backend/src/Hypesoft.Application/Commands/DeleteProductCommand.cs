@@ -11,7 +11,11 @@ public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, bool>
 
     public async Task<bool> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
-        await _repository.DeleteAsync(request.Id);
+        var product = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        if (product == null)
+            return false;
+            
+        await _repository.DeleteAsync(request.Id, cancellationToken);
         Log.Warning("Produto {ProductId} removido do sistema", request.Id);
         return true;
     }

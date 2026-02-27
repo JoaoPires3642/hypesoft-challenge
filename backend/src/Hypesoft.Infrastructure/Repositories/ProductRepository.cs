@@ -51,7 +51,8 @@ public class ProductRepository : IProductRepository
 
         if (!string.IsNullOrWhiteSpace(name))
         {
-            query = query.Where(p => p.Name.Contains(name));
+            var lowerName = name.ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(lowerName));
         }
 
         return await query.ToListAsync(cancellationToken);
