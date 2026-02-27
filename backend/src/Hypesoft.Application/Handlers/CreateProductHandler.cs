@@ -1,21 +1,21 @@
 using MediatR;
 using Serilog;
 using Hypesoft.Application.Commands;
+using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace Hypesoft.Application.Handlers;
 
 public class CreateProductHandler : IRequestHandler<CreateProductCommand, Guid>
 {
     private readonly IProductRepository _productRepository;
-    private readonly IDistributedCache _cache;
+    private readonly ICacheInvalidator _cacheInvalidator;
 
-    public CreateProductHandler(IProductRepository productRepository, IDistributedCache cache)
+    public CreateProductHandler(IProductRepository productRepository, ICacheInvalidator cacheInvalidator)
     {
         _productRepository = productRepository;
-        _cache = cache;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     public async Task<Guid> Handle(CreateProductCommand request, CancellationToken cancellationToken)
@@ -32,15 +32,13 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Guid>
             );
 
             await _productRepository.AddAsync(product, cancellationToken);
-            // Limpa cache de produtos após criar novo
-            await _cache.RemoveAsync("products_cache", cancellationToken);
-            
+            await _cacheInvalidator.InvalidateProductCache(null, cancellationToken);
+            await _cacheInvalidator.InvalidateCategoryProductsCache(product.CategoryId, cancellationToken);
 
             Log.Information("Produto {ProductName} criado com sucesso. ID: {ProductId}", 
                 product.Name, product.Id);
 
             return product.Id;
-;
         }
         catch (Exception ex)
         {

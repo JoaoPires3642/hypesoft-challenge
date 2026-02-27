@@ -1,5 +1,6 @@
 using Hypesoft.Application.DTOs;
 using Hypesoft.Application.Queries;
+using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
@@ -9,7 +10,10 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
 {
     private readonly IProductRepository _repository;
     private readonly IDistributedCache _cache;
-    private const string CacheKeyPrefix = "products_cache";
+    private static readonly DistributedCacheEntryOptions _cacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+    };
 
     public GetProductsHandler(IProductRepository repository, IDistributedCache cache)
     {
@@ -19,7 +23,16 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
 
     public async Task<PagedResponse<ProductResponse>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
+        var cacheKey = CacheKeys.ProductsPaged(request.PageNumber, request.PageSize);
+        
+        // Tenta buscar do cache
+        var cachedData = await _cache.GetStringAsync(cacheKey, cancellationToken);
+        if (!string.IsNullOrEmpty(cachedData))
+        {
+            return JsonSerializer.Deserialize<PagedResponse<ProductResponse>>(cachedData);
+        }
 
+        // Se não estiver no cache, busca do repositório
         var (items, totalCount) = await _repository.GetAllPagedAsync(request.PageNumber, request.PageSize);
         
         var response = new PagedResponse<ProductResponse>(
@@ -28,6 +41,10 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
             request.PageSize,
             totalCount
         );
+
+        // Armazena no cache
+        var jsonData = JsonSerializer.Serialize(response);
+        await _cache.SetStringAsync(cacheKey, jsonData, _cacheOptions, cancellationToken);
 
         return response;
     }

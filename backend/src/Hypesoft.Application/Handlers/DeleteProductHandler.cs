@@ -1,7 +1,7 @@
 using Hypesoft.Application.Commands;
+using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Repositories;
 using MediatR;
-using Microsoft.Extensions.Caching.Distributed;
 using Serilog;
 
 namespace Hypesoft.Application.Handlers;
@@ -9,12 +9,12 @@ namespace Hypesoft.Application.Handlers;
 public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, bool>
 {
     private readonly IProductRepository _repository;
-    private readonly IDistributedCache _cache;
+    private readonly ICacheInvalidator _cacheInvalidator;
 
-    public DeleteProductHandler(IProductRepository repository, IDistributedCache cache)
+    public DeleteProductHandler(IProductRepository repository, ICacheInvalidator cacheInvalidator)
     {
         _repository = repository;
-        _cache = cache;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     public async Task<bool> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
@@ -23,7 +23,13 @@ public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, bool>
         if (product is null) return false;
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
-        await _cache.RemoveAsync("products_cache", cancellationToken);
+        
+        // Invalidação granular: remove apenas este produto específico
+        await _cacheInvalidator.InvalidateProductCache(product.Id, cancellationToken);
+        // Invalida também a categoria
+        await _cacheInvalidator.InvalidateCategoryProductsCache(product.CategoryId, cancellationToken);
+        // Invalida as listagens paginadas
+        await _cacheInvalidator.InvalidateProductCache(null, cancellationToken);
 
         Log.Warning("Produto {ProductId} removido do sistema", request.Id);
         return true;

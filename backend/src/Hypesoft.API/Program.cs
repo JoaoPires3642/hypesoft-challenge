@@ -1,6 +1,7 @@
 using Hypesoft.Infrastructure.Data;
 using Hypesoft.Infrastructure.Repositories;
 using Hypesoft.Infrastructure.Queries;
+using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Repositories;
 using Hypesoft.Domain.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -128,8 +129,9 @@ try
     // Query Services
     builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
 
-    // Cache em memória 
+    // Cache Services
     builder.Services.AddDistributedMemoryCache();
+    builder.Services.AddScoped<ICacheInvalidator, CacheInvalidator>();
 
     if (!disableAuth)
     {
