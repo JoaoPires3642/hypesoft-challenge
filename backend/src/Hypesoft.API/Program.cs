@@ -20,6 +20,16 @@ try
     
     var builder = WebApplication.CreateBuilder(args);
 
+    var keycloakAuthority = builder.Configuration["KEYCLOAK_AUTHORITY"] ?? "http://localhost:8080/realms/hypesoft-realm";
+    var keycloakAudience = builder.Configuration["KEYCLOAK_AUDIENCE"] ?? "account";
+    var corsOrigins = builder.Configuration["CORS_ORIGINS"]
+        ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        ?? new[]
+        {
+            "http://localhost:3000",
+            "https://crispy-space-train-4jq5vp4q95xvfj4rw-3000.app.github.dev"
+        };
+
     // Configuração do Serilog 
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .WriteTo.Console()
@@ -52,7 +62,7 @@ try
             {
                 Implicit = new OpenApiOAuthFlow
                 {
-                    AuthorizationUrl = new Uri("http://localhost:8080/realms/hypesoft-realm/protocol/openid-connect/auth"),
+                    AuthorizationUrl = new Uri($"{keycloakAuthority}/protocol/openid-connect/auth"),
                     Scopes = new Dictionary<string, string>
                     {
                         { "openid", "OpenID" }
@@ -85,13 +95,10 @@ try
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins(
-                "http://localhost:3000",
-                "https://crispy-space-train-4jq5vp4q95xvfj4rw-3000.app.github.dev"
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+            policy.WithOrigins(corsOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
     });
 
@@ -118,13 +125,13 @@ try
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "http://localhost:8080/realms/hypesoft-realm";
+        options.Authority = keycloakAuthority;
         options.RequireHttpsMetadata = false; // Apenas para dev/docker
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidAudience = "account", // Padrão do Keycloak
+            ValidAudience = keycloakAudience,
             ValidateLifetime = true
         };
     });
