@@ -1,9 +1,8 @@
 "use client";
 
-import { Bell, Menu, Search, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 interface HeaderProps {
@@ -53,28 +51,7 @@ export function AppHeader({ onToggleSidebar }: HeaderProps) {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Search */}
-      <div className="relative hidden flex-1 md:block md:max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Buscar produtos, categorias..."
-          className="h-9 w-full rounded-lg bg-secondary pl-9 text-sm"
-        />
-      </div>
-
       <div className="ml-auto flex items-center gap-2">
-        {/* Search mobile */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 md:hidden"
-          aria-label="Buscar"
-        >
-          <Search className="h-4.5 w-4.5" />
-        </Button>
-
-
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
