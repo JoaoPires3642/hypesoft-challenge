@@ -6,6 +6,7 @@ using Hypesoft.Domain.Repositories;
 using Hypesoft.Domain.Queries;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.EntityFrameworkCore.Extensions;
+using MongoDB.Driver;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Swashbuckle.AspNetCore.Annotations;
@@ -187,6 +188,27 @@ try
     
 
     var app = builder.Build();
+
+    // Criar índices do MongoDB para otimização de performance
+    if (!useInMemoryDb)
+    {
+        try
+        {
+            var connectionString = builder.Configuration.GetConnectionString("MongoDb") ?? throw new InvalidOperationException("MongoDb connection string not found");
+            var databaseName = builder.Configuration.GetValue<string>("ConnectionStrings:DatabaseName") ?? throw new InvalidOperationException("DatabaseName not found");
+            
+            var mongoClient = new MongoDB.Driver.MongoClient(connectionString);
+            var database = mongoClient.GetDatabase(databaseName);
+            
+            Log.Information("Configurando índices do MongoDB...");
+            await MongoDbIndexConfiguration.EnsureIndexesAsync(database);
+            Log.Information("✓ Índices do MongoDB configurados com sucesso");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Erro ao criar índices do MongoDB. A aplicação continuará funcionando, mas com performance reduzida.");
+        }
+    }
 
     // Serilog request logging
     app.UseSerilogRequestLogging();

@@ -24,10 +24,10 @@ public class CategoryRepository : ICategoryRepository
     }
 
     public async Task<IEnumerable<Category>> GetAllAsync() 
-        => await _context.Categories.ToListAsync();
+        => await _context.Categories.AsNoTracking().ToListAsync();
 
     public async Task<Category?> GetByIdAsync(Guid id) 
-        => await _context.Categories.FirstOrDefaultAsync(c => c.Id == id);
+        => await _context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
 
     public async Task DeleteAsync(Guid id)
     {

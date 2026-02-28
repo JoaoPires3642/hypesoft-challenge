@@ -22,7 +22,9 @@ public class ProductRepository : IProductRepository
 
     public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Products.ToListAsync(cancellationToken);
+        return await _context.Products
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
@@ -48,7 +50,7 @@ public class ProductRepository : IProductRepository
     }
     public async Task<IEnumerable<Product>> SearchAsync(string? name, CancellationToken cancellationToken = default)
     {
-        var query = _context.Products.AsQueryable();
+        var query = _context.Products.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name))
         {
@@ -62,6 +64,7 @@ public class ProductRepository : IProductRepository
     public async Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
 {
     return await _context.Products
+        .AsNoTracking()
         .Where(p => p.CategoryId == categoryId)
         .ToListAsync(cancellationToken);
 }
@@ -69,6 +72,7 @@ public class ProductRepository : IProductRepository
 public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = ProductConstants.LOW_STOCK_THRESHOLD, CancellationToken cancellationToken = default)
 {
     return await _context.Products
+        .AsNoTracking()
         .Where(p => p.StockQuantity < threshold)
         .ToListAsync(cancellationToken);
 }
