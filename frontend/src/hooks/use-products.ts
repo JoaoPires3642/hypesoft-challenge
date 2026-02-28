@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import type { ProductFilters, ProductFormData } from "@/src/types";
 import { useApiWithAuth } from "./use-api-with-auth";
 
@@ -8,9 +9,14 @@ export const PRODUCTS_KEY = "products";
 
 export function useProducts(filters?: ProductFilters) {
   const api = useApiWithAuth();
+  const { data: session, status } = useSession();
+  
   return useQuery({
     queryKey: [PRODUCTS_KEY, filters],
     queryFn: () => api.fetchProducts(filters),
+    enabled: status === "authenticated" && !!session?.accessToken,
+    retry: 2,
+    staleTime: 30000, // 30 segundos
   });
 }
 

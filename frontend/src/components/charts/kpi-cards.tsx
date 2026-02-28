@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, DollarSign, AlertTriangle } from "lucide-react";
+import { Package, DollarSign, AlertTriangle, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardKPIs } from "@/src/hooks/use-dashboard";
@@ -14,7 +14,7 @@ function formatCurrency(value: number): string {
 }
 
 export function KpiCards() {
-  const { data, isLoading } = useDashboardKPIs();
+  const { data, isLoading, error } = useDashboardKPIs();
   
   const kpiData = (data as DashboardKPIs | undefined);
 
@@ -34,6 +34,24 @@ export function KpiCards() {
           </Card>
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive/50 bg-destructive/5">
+        <CardContent className="flex items-center gap-3 p-6">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <div>
+            <p className="font-medium text-destructive">
+              Erro ao carregar métricas
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Tente recarregar a página
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
