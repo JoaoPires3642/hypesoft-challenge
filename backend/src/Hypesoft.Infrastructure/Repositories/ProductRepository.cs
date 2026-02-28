@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
+using Hypesoft.Domain.Constants;
 using Hypesoft.Infrastructure.Data;
 
 namespace Hypesoft.Infrastructure.Repositories;
@@ -65,7 +66,7 @@ public class ProductRepository : IProductRepository
         .ToListAsync(cancellationToken);
 }
 
-public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, CancellationToken cancellationToken = default)
+public async Task<IEnumerable<Product>> GetLowStockAsync(int threshold = ProductConstants.LOW_STOCK_THRESHOLD, CancellationToken cancellationToken = default)
 {
     return await _context.Products
         .Where(p => p.StockQuantity < threshold)

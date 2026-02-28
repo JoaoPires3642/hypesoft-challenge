@@ -3,6 +3,7 @@ using Hypesoft.Application.DTOs;
 using Hypesoft.Application.Queries;
 using Hypesoft.Application.Infrastructure.Cache;
 using Hypesoft.Domain.Repositories;
+using Hypesoft.Domain.Constants;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
@@ -14,7 +15,7 @@ public class GetProductsHandler : IRequestHandler<GetProductsQuery, PagedRespons
     private readonly IMapper _mapper;
     private static readonly DistributedCacheEntryOptions _cacheOptions = new()
     {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(ProductConstants.CACHE_EXPIRATION_MINUTES)
     };
 
     public GetProductsHandler(IProductRepository repository, IDistributedCache cache, IMapper mapper)

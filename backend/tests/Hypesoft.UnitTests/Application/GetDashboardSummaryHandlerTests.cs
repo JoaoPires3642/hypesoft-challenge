@@ -5,6 +5,7 @@ using Hypesoft.Application.Queries;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
 using Hypesoft.Domain.Queries;
+using Hypesoft.Domain.Constants;
 using Moq;
 
 namespace Hypesoft.UnitTests.Application;
@@ -30,7 +31,7 @@ public class GetDashboardSummaryHandlerTests
         queryServiceMock.Setup(r => r.GetTotalStockValueAsync(It.IsAny<CancellationToken>())).ReturnsAsync(25000m);
         queryServiceMock.Setup(r => r.GetCountByCategoryAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, int> { [cat1.Id] = 5 });
-        productRepoMock.Setup(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(lowStockProducts);
+        productRepoMock.Setup(r => r.GetLowStockAsync(ProductConstants.LOW_STOCK_THRESHOLD, It.IsAny<CancellationToken>())).ReturnsAsync(lowStockProducts);
         categoryRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Category> { cat1, cat2 });
 
         var handler = new GetDashboardSummaryHandler(productRepoMock.Object, categoryRepoMock.Object, queryServiceMock.Object, mapper);

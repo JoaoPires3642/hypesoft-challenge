@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Hypesoft.Domain.Constants;
 
 namespace Hypesoft.IntegrationTests;
 
@@ -281,7 +282,7 @@ public class ProductsEndpointsTests : IntegrationTestBase
         products!.Should().HaveCount(2);
         products.Should().Contain(p => p.Id == lowStockId1);
         products.Should().Contain(p => p.Id == lowStockId2);
-        products.Should().OnlyContain(p => p.StockQuantity < 10);
+        products.Should().OnlyContain(p => p.StockQuantity < ProductConstants.LOW_STOCK_THRESHOLD);
     }
 
     private async Task<Guid> CreateCategoryAsync(string name)

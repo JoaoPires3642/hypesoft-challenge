@@ -4,6 +4,7 @@ using Hypesoft.Application.Mappings;
 using Hypesoft.Application.Queries;
 using Hypesoft.Domain.Entities;
 using Hypesoft.Domain.Repositories;
+using Hypesoft.Domain.Constants;
 using Moq;
 
 namespace Hypesoft.UnitTests.Application;
@@ -22,7 +23,7 @@ public class GetLowStockProductsHandlerTests
         };
 
         repositoryMock
-            .Setup(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLowStockAsync(ProductConstants.LOW_STOCK_THRESHOLD, It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
         var handler = new GetLowStockProductsHandler(repositoryMock.Object, mapper);
@@ -31,7 +32,7 @@ public class GetLowStockProductsHandlerTests
 
         result.Should().HaveCount(1);
         result[0].IsStockLow.Should().BeTrue();
-        repositoryMock.Verify(r => r.GetLowStockAsync(10, It.IsAny<CancellationToken>()), Times.Once);
+        repositoryMock.Verify(r => r.GetLowStockAsync(ProductConstants.LOW_STOCK_THRESHOLD, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static IMapper CreateMapper()

@@ -2,6 +2,7 @@ using AutoMapper;
 using Hypesoft.Application.DTOs;
 using Hypesoft.Domain.Repositories;
 using Hypesoft.Domain.Queries;
+using Hypesoft.Domain.Constants;
 using MediatR;
 
 namespace Hypesoft.Application.Queries;
@@ -27,7 +28,7 @@ public class GetDashboardSummaryHandler : IRequestHandler<GetDashboardSummaryQue
     {
         var totalCountTask = _queryService.GetTotalCountAsync(cancellationToken);
         var totalValueTask = _queryService.GetTotalStockValueAsync(cancellationToken);
-        var lowStockTask = _productRepo.GetLowStockAsync(10, cancellationToken);
+        var lowStockTask = _productRepo.GetLowStockAsync(ProductConstants.LOW_STOCK_THRESHOLD, cancellationToken);
         var categoryCountsTask = _queryService.GetCountByCategoryAsync(cancellationToken);
         var categoriesTask = _categoryRepo.GetAllAsync();
 

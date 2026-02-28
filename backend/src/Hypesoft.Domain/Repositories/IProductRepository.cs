@@ -1,4 +1,5 @@
 using Hypesoft.Domain.Entities;
+using Hypesoft.Domain.Constants;
 
 namespace Hypesoft.Domain.Repositories;
 
@@ -11,6 +12,6 @@ public interface IProductRepository
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> SearchAsync(string? name, CancellationToken cancellationToken = default);
     Task<IEnumerable<Product>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Product>> GetLowStockAsync(int threshold = 10, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Product>> GetLowStockAsync(int threshold = ProductConstants.LOW_STOCK_THRESHOLD, CancellationToken cancellationToken = default);
     Task<(IEnumerable<Product> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize);
 }

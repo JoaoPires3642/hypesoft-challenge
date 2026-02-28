@@ -323,7 +323,7 @@ chore(deps): update dependencies to latest versions
 ### Documentação
 - API documentada com Swagger
 - Guia de instalação e execução
-- Documentação das decisões arquiteturais
+- Documentação das decisões arquiteturais 
 
 ### Apresentação
 - Vídeo de 5-10 minutos demonstrando a aplicação

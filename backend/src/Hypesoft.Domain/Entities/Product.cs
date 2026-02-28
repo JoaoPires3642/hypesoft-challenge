@@ -1,8 +1,9 @@
+using Hypesoft.Domain.Constants;
+
 namespace Hypesoft.Domain.Entities
 {
     public class Product
     {
-        private const int LOW_STOCK_THRESHOLD = 10;
 
         public Guid Id { get; private set; }
         public string Name { get; private set; }
@@ -49,7 +50,7 @@ namespace Hypesoft.Domain.Entities
             Price = price;
         }
 
-        public bool IsStockLow() => StockQuantity < LOW_STOCK_THRESHOLD;
+        public bool IsStockLow() => StockQuantity < ProductConstants.LOW_STOCK_THRESHOLD;
 
     }
 }
