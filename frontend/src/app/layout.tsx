@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { QueryProvider } from '@/src/components/layout/query-provider'
+import { AuthProvider } from '@/src/components/layout/auth-provider'
 import { AppShell } from '@/src/components/layout/app-shell'
 import './globals.css'
 
@@ -51,11 +52,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        <QueryProvider>
-          <AppShell>
-            {children}
-          </AppShell>
-        </QueryProvider>
+        <AuthProvider>
+          <QueryProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+          </QueryProvider>
+        </AuthProvider>
       </body>
     </html>
   )

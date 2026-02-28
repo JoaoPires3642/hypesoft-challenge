@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useCategories } from "@/src/hooks/use-categories";
-import type { Product } from "@/src/types";
+import type { Product, Category } from "@/src/types";
 
 const productSchema = z.object({
   name: z
@@ -70,6 +70,7 @@ export function ProductFormDialog({
   isSubmitting,
 }: ProductFormDialogProps) {
   const { data: categories } = useCategories();
+  const categoriesList = (categories as Category[] | undefined) || [];
   const isEditing = !!product;
 
   const {
@@ -210,7 +211,7 @@ export function ProductFormDialog({
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
-                {categories?.map((cat) => (
+                {categoriesList.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>

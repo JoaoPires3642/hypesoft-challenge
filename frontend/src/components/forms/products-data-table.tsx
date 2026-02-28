@@ -37,7 +37,7 @@ import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } fro
 import { useCategories } from "@/src/hooks/use-categories";
 import { ProductFormDialog } from "@/src/components/forms/product-form-dialog";
 import { getApiErrorMessage } from "@/src/services/api";
-import type { Product, ProductFormData } from "@/src/types";
+import type { Product, ProductFormData, Category } from "@/src/types";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -53,6 +53,7 @@ export function ProductsDataTable() {
   const pageSize = 8;
 
   const { data: categories } = useCategories();
+  const categoriesList = (categories as Category[] | undefined) || [];
   const { data: productsData, isLoading } = useProducts({
     search,
     categoryId: categoryFilter === "all" ? undefined : categoryFilter,
@@ -157,7 +158,7 @@ export function ProductsDataTable() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {categories?.map((cat) => (
+                {categoriesList.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>

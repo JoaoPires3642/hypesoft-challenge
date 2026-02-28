@@ -11,9 +11,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategoryDistribution } from "@/src/hooks/use-dashboard";
+import type { CategoryDistribution } from "@/src/types";
 
 export function CategoryChart() {
   const { data, isLoading } = useCategoryDistribution();
+  
+  const chartData = (data as CategoryDistribution[] | undefined) || [];
 
   if (isLoading) {
     return (
@@ -39,7 +42,7 @@ export function CategoryChart() {
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -48,7 +51,7 @@ export function CategoryChart() {
               dataKey="value"
               stroke="none"
             >
-              {data?.map((entry, index) => (
+              {chartData?.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}
             </Pie>

@@ -33,6 +33,6 @@ COPY --from=builder /app/package.json ./
 EXPOSE 3000
 
 ENV NODE_ENV=production
-ENV NEXT_PUBLIC_API_URL=http://api:5000
+# NEXT_PUBLIC_API_URL should be set via docker-compose environment
 
 CMD ["npm", "start"]

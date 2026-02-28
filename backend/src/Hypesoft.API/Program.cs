@@ -26,17 +26,13 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
    
-    var keycloakInternalUrl = builder.Configuration["KEYCLOAK_INTERNAL_URL"] ?? "http://keycloak:8080/realms/hypesoft-realm";
-    var keycloakExternalUrl = builder.Configuration["KEYCLOAK_EXTERNAL_URL"] ?? "http://localhost:8080/realms/hypesoft-realm";
+    var keycloakInternalUrl = builder.Configuration["KEYCLOAK_INTERNAL_URL"] ?? throw new InvalidOperationException("KEYCLOAK_INTERNAL_URL is required");
+    var keycloakExternalUrl = builder.Configuration["KEYCLOAK_EXTERNAL_URL"] ?? throw new InvalidOperationException("KEYCLOAK_EXTERNAL_URL is required");
     var keycloakAudience = builder.Configuration["KEYCLOAK_AUDIENCE"] ?? "account";
     var disableAuth = builder.Configuration.GetValue("DISABLE_AUTH", false);
     var corsOrigins = builder.Configuration["CORS_ORIGINS"]
         ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        ?? new[]
-        {
-            "http://localhost:3000",
-            "https://crispy-space-train-4jq5vp4q95xvfj4rw-3000.app.github.dev"
-        };
+        ?? throw new InvalidOperationException("CORS_ORIGINS is required");
 
     // Configuração do Serilog 
     builder.Host.UseSerilog((context, services, configuration) => configuration

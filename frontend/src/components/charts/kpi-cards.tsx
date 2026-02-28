@@ -4,6 +4,7 @@ import { Package, DollarSign, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardKPIs } from "@/src/hooks/use-dashboard";
+import type { DashboardKPIs } from "@/src/types";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -14,6 +15,8 @@ function formatCurrency(value: number): string {
 
 export function KpiCards() {
   const { data, isLoading } = useDashboardKPIs();
+  
+  const kpiData = (data as DashboardKPIs | undefined);
 
   if (isLoading) {
     return (
@@ -37,7 +40,7 @@ export function KpiCards() {
   const kpis = [
     {
       label: "Total de Produtos",
-      value: data?.totalProducts ?? 0,
+      value: kpiData?.totalProducts ?? 0,
       format: (v: number) => v.toString(),
       icon: Package,
       color: "bg-primary/10 text-primary",
@@ -45,7 +48,7 @@ export function KpiCards() {
     },
     {
       label: "Valor em Estoque",
-      value: data?.totalStockValue ?? 0,
+      value: kpiData?.totalStockValue ?? 0,
       format: formatCurrency,
       icon: DollarSign,
       color: "bg-success/10 text-success",
@@ -53,7 +56,7 @@ export function KpiCards() {
     },
     {
       label: "Alertas de Estoque",
-      value: data?.lowStockAlerts ?? 0,
+      value: kpiData?.lowStockAlerts ?? 0,
       format: (v: number) => v.toString(),
       icon: AlertTriangle,
       color: "bg-warning/10 text-warning",

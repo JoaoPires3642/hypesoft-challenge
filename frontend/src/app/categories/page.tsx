@@ -164,7 +164,7 @@ export default function CategoriasPage() {
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
-            ) : categories && categories.length > 0 ? (
+            ) : categories && Array.isArray(categories) && categories.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>

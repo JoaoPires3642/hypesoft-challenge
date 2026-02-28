@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLowStockProducts } from "@/src/hooks/use-dashboard";
 import { AlertTriangle } from "lucide-react";
+import type { Product } from "@/src/types";
 
 function getStockBadge(quantity: number) {
   if (quantity <= 2) {
@@ -38,6 +39,8 @@ function getStockBadge(quantity: number) {
 
 export function LowStockTable() {
   const { data, isLoading } = useLowStockProducts();
+  
+  const products = (data as Product[] | undefined) || [];
 
   if (isLoading) {
     return (
@@ -67,7 +70,7 @@ export function LowStockTable() {
         </div>
       </CardHeader>
       <CardContent>
-        {data && data.length > 0 ? (
+        {products && products.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -78,7 +81,7 @@ export function LowStockTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((product) => (
+              {products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium text-card-foreground">
                     {product.name}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Menu, Search, LogOut, User } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,11 +20,25 @@ interface HeaderProps {
 }
 
 export function AppHeader({ onToggleSidebar }: HeaderProps) {
-  const handleLogout = () => {
-    // TODO: Integrar com Keycloak logout
-    // await keycloak.logout({ redirectUri: window.location.origin });
-    toast.info("Logout simulado. Integre com Keycloak para produção.");
+  const { data: session } = useSession();
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ callbackUrl: "/login" });
+      toast.success("Logout realizado com sucesso");
+    } catch (error) {
+      toast.error("Erro ao fazer logout");
+    }
   };
+
+  const userName = session?.user?.name || "Usuário";
+  const userEmail = session?.user?.email || "";
+  const userInitials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card px-4 lg:px-6">
@@ -68,18 +83,18 @@ export function AppHeader({ onToggleSidebar }: HeaderProps) {
               className="flex h-9 items-center gap-2 rounded-lg px-2"
             >
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                AD
+                {userInitials}
               </div>
               <span className="hidden text-sm font-medium lg:inline-flex">
-                Admin
+                {userName}
               </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel className="font-normal">
-              <p className="text-sm font-medium">Administrador</p>
+              <p className="text-sm font-medium">{userName}</p>
               <p className="text-xs text-muted-foreground">
-                admin@hypesoft.com
+                {userEmail}
               </p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

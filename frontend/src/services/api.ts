@@ -18,7 +18,26 @@ const CHART_COLORS = [
   "var(--color-chart-5)",
 ];
 
+// API Base URL - must be set via NEXT_PUBLIC_API_URL environment variable
+// Fallback to http://api:5000 for docker container communication
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://api:5000";
+
+if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_API_URL) {
+  console.warn('NEXT_PUBLIC_API_URL is not set. Using fallback URL.');
+}
+
+// Helper function to get auth headers
+function getAuthHeaders(token?: string): HeadersInit {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  return headers;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -107,9 +126,11 @@ export function getApiErrorMessage(
 }
 
 //  categoryId para category name
-async function mapProductsWithCategories(items: any[]): Promise<Product[]> {
+async function mapProductsWithCategories(items: any[], token?: string): Promise<Product[]> {
   try {
-    const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories`);
+    const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories`, {
+      headers: getAuthHeaders(token),
+    });
     if (!categoriesResponse.ok) {
       throw await toApiError(categoriesResponse, "Falha ao buscar categorias");
     }
@@ -136,7 +157,8 @@ async function mapProductsWithCategories(items: any[]): Promise<Product[]> {
 // ----- PRODUTOS -----
 
 export async function fetchProducts(
-  filters?: ProductFilters
+  filters?: ProductFilters,
+  token?: string
 ): Promise<PaginatedResponse<Product>> {
   try {
     let url = `${API_BASE_URL}/api/products`;
@@ -144,13 +166,16 @@ export async function fetchProducts(
 
 
     if (filters?.search && filters.search.trim()) {
-      response = await fetch(`${API_BASE_URL}/api/products/search?name=${encodeURIComponent(filters.search)}`);
+      response = await fetch(
+        `${API_BASE_URL}/api/products/search?name=${encodeURIComponent(filters.search)}`,
+        { headers: getAuthHeaders(token) }
+      );
       if (!response.ok) {
         throw await toApiError(response, "Falha ao buscar produtos");
       }
       const data = await response.json();
       
-      const items = await mapProductsWithCategories(Array.isArray(data) ? data : []);
+      const items = await mapProductsWithCategories(Array.isArray(data) ? data : [], token);
       
       return {
         data: items,
@@ -162,7 +187,10 @@ export async function fetchProducts(
     }
 
     if (filters?.categoryId && filters.categoryId !== "all") {
-      response = await fetch(`${API_BASE_URL}/api/products/category/${filters.categoryId}`);
+      response = await fetch(
+        `${API_BASE_URL}/api/products/category/${filters.categoryId}`,
+        { headers: getAuthHeaders(token) }
+      );
       if (!response.ok) {
         throw await toApiError(
           response,
@@ -171,7 +199,7 @@ export async function fetchProducts(
       }
       const data = await response.json();
       
-      const items = await mapProductsWithCategories(Array.isArray(data) ? data : []);
+      const items = await mapProductsWithCategories(Array.isArray(data) ? data : [], token);
       
       return {
         data: items,
@@ -186,14 +214,16 @@ export async function fetchProducts(
     if (filters?.page) params.append("page", filters.page.toString());
     if (filters?.pageSize) params.append("pageSize", filters.pageSize.toString());
 
-    response = await fetch(`${url}?${params}`);
+    response = await fetch(`${url}?${params}`, {
+      headers: getAuthHeaders(token),
+    });
     if (!response.ok) {
       throw await toApiError(response, "Falha ao buscar produtos");
     }
     const data = await response.json();
 
     // Mapear stockQuantity (backend) para quantity (frontend) e adicionar categoria
-    const items = await mapProductsWithCategories(data.items || []);
+    const items = await mapProductsWithCategories(data.items || [], token);
 
     return {
       data: items,
@@ -214,9 +244,11 @@ export async function fetchProducts(
   }
 }
 
-export async function fetchProductById(id: string): Promise<Product | null> {
+export async function fetchProductById(id: string, token?: string): Promise<Product | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
+    const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
+      headers: getAuthHeaders(token),
+    });
     if (response.status === 404) return null;
     if (!response.ok) {
       throw await toApiError(response, "Falha ao buscar produto");
@@ -224,7 +256,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     const data = await response.json();
     
     // Mapear e adicionar categoria
-    const [product] = await mapProductsWithCategories([data]);
+    const [product] = await mapProductsWithCategories([data], token);
     return product || null;
   } catch (error) {
     console.error("Erro ao buscar produto:", error);
@@ -232,7 +264,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   }
 }
 
-export async function createProduct(data: ProductFormData): Promise<Product> {
+export async function createProduct(data: ProductFormData, token?: string): Promise<Product> {
   try {
     const payload = {
       name: data.name,
@@ -244,7 +276,7 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
     
     const response = await fetch(`${API_BASE_URL}/api/products`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(token),
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
@@ -265,7 +297,8 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
 
 export async function updateProduct(
   id: string,
-  data: ProductFormData
+  data: ProductFormData,
+  token?: string
 ): Promise<Product> {
   try {
     // Mapear quantity (frontend) para stockQuantity (backend)
@@ -280,7 +313,7 @@ export async function updateProduct(
     
     const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(token),
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
@@ -298,10 +331,11 @@ export async function updateProduct(
   }
 }
 
-export async function deleteProduct(id: string): Promise<void> {
+export async function deleteProduct(id: string, token?: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(token),
     });
     if (!response.ok) {
       throw await toApiError(response, "Falha ao deletar produto");
@@ -314,9 +348,11 @@ export async function deleteProduct(id: string): Promise<void> {
 
 // ----- CATEGORIAS -----
 
-export async function fetchCategories(): Promise<Category[]> {
+export async function fetchCategories(token?: string): Promise<Category[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/categories`);
+    const response = await fetch(`${API_BASE_URL}/api/categories`, {
+      headers: getAuthHeaders(token),
+    });
     if (!response.ok) {
       throw await toApiError(response, "Falha ao buscar categorias");
     }
@@ -332,11 +368,11 @@ export async function fetchCategories(): Promise<Category[]> {
   }
 }
 
-export async function createCategory(data: CategoryFormData): Promise<Category> {
+export async function createCategory(data: CategoryFormData, token?: string): Promise<Category> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/categories`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(token),
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -354,10 +390,47 @@ export async function createCategory(data: CategoryFormData): Promise<Category> 
   }
 }
 
-export async function deleteCategory(id: string): Promise<void> {
+export async function updateCategory(
+  id: string,
+  data: CategoryFormData,
+  token?: string
+): Promise<Category> {
+  try {
+    const payload = { id, ...data };
+    const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(token),
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw await toApiError(response, "Falha ao atualizar categoria");
+    }
+    return {
+      id,
+      ...data,
+      createdAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Erro ao atualizar categoria:", error);
+    throw error;
+  }
+}
+
+export async function fetchCategoryById(id: string, token?: string): Promise<Category | null> {
+  try {
+    const categories = await fetchCategories(token);
+    return categories.find((c) => c.id === id) || null;
+  } catch (error) {
+    console.error("Erro ao buscar categoria:", error);
+    return null;
+  }
+}
+
+export async function deleteCategory(id: string, token?: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(token),
     });
     if (!response.ok) {
       throw await toApiError(response, "Falha ao deletar categoria");
@@ -370,9 +443,11 @@ export async function deleteCategory(id: string): Promise<void> {
 
 // ----- DASHBOARD -----
 
-export async function fetchDashboardSummary() {
+export async function fetchDashboardSummary(token?: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard`);
+    const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+      headers: getAuthHeaders(token),
+    });
     if (!response.ok) {
       throw await toApiError(response, "Falha ao buscar dashboard");
     }
@@ -389,8 +464,8 @@ export async function fetchDashboardSummary() {
   }
 }
 
-export async function fetchDashboardKPIs(): Promise<DashboardKPIs> {
-  const summary = await fetchDashboardSummary();
+export async function fetchDashboardKPIs(token?: string): Promise<DashboardKPIs> {
+  const summary = await fetchDashboardSummary(token);
   
   const lowStockAlerts = summary.lowStockProducts?.length || 0;
 
@@ -401,10 +476,10 @@ export async function fetchDashboardKPIs(): Promise<DashboardKPIs> {
   };
 }
 
-export async function fetchCategoryDistribution(): Promise<
+export async function fetchCategoryDistribution(token?: string): Promise<
   CategoryDistribution[]
 > {
-  const summary = await fetchDashboardSummary();
+  const summary = await fetchDashboardSummary(token);
   
   return (summary.productsByCategory || []).map((cat: any, i: number) => ({
     name: cat.categoryName || "Sem categoria",
@@ -413,8 +488,8 @@ export async function fetchCategoryDistribution(): Promise<
   }));
 }
 
-export async function fetchLowStockProducts(): Promise<Product[]> {
-  const summary = await fetchDashboardSummary();
+export async function fetchLowStockProducts(token?: string): Promise<Product[]> {
+  const summary = await fetchDashboardSummary(token);
   
   return (summary.lowStockProducts || []).map((p: any) => ({
     id: p.id,
@@ -426,4 +501,19 @@ export async function fetchLowStockProducts(): Promise<Product[]> {
     createdAt: p.createdAt || new Date().toISOString(),
     updatedAt: p.updatedAt || new Date().toISOString(),
   }));
+}
+
+// Export combined dashboard data function
+export async function fetchDashboardData(token?: string) {
+  const [kpis, categoryDistribution, lowStockProducts] = await Promise.all([
+    fetchDashboardKPIs(token),
+    fetchCategoryDistribution(token),
+    fetchLowStockProducts(token),
+  ]);
+  
+  return {
+    kpis,
+    categoryDistribution,
+    lowStockProducts,
+  };
 }
